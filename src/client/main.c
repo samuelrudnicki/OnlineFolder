@@ -14,14 +14,12 @@ int main(int argc, char *argv[])
     int sockfd, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
-	
+
     char buffer[256];
     if (argc < 2) {
 		fprintf(stderr,"usage %s hostname\n", argv[0]);
 		exit(0);
     }
-
-    printf("\n1\n");
 	
 	server = gethostbyname(argv[1]);
 	if (server == NULL) {
@@ -29,7 +27,6 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
-        printf("\n1\n");
     
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         printf("ERROR opening socket\n");
@@ -38,7 +35,7 @@ int main(int argc, char *argv[])
     
 	serv_addr.sin_family = AF_INET;     
 	serv_addr.sin_port = htons(PORT);    
-	serv_addr.sin_addr = *((struct in_addr *)server->h_addr);
+	//serv_addr.sin_addr = *((struct in_addr *)server->h_addr);
 	bzero(&(serv_addr.sin_zero), 8);     
 	
     
