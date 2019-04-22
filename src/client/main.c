@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
     char command[PACKET_SIZE];
     char response[PACKET_SIZE];
     char *option;
+    char *path;
     struct sockaddr_in serv_addr;
     struct hostent *server;
 
@@ -58,8 +59,13 @@ int main(int argc, char *argv[])
         fgets(command, PACKET_SIZE, stdin);
 
         option = strtok(command," ");
+        path = strtok(NULL," ");
+        if(path != NULL) {
+            path = strtok(path,"\n");
+        }
 
         printf("OPTION: %s\n", option);
+        printf("PATH: %s\n", path);
         
         /* write in the socket */
         n = write(sockfd, command, strlen(command));
