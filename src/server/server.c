@@ -13,7 +13,11 @@ void *handleConnection(void *socketDescriptor) {
     char buffer[PACKET_SIZE];
     int exitCommand = FALSE;
     int n;
-    int newsockfd = *(int*)socketDescriptor;    
+    int newsockfd = *(int*)socketDescriptor;
+
+    //TODO: Receives username from client
+
+    //TODO: get_sync_dir, creates directory, if not created
 
 	while(exitCommand == FALSE) {
         bzero(buffer, PACKET_SIZE);
@@ -38,6 +42,21 @@ void *handleConnection(void *socketDescriptor) {
         if(strcmp(buffer,"exit\n") == 0) {
             exitCommand = TRUE;
         }
+        /*
+        else if (strcmp(option, "upload") == 0) { // upload from path
+            
+        } else if (strcmp(option, "download") == 0) { // download to exec folder
+            
+        } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
+            
+        } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir
+            
+        } else if (strcmp(option, "list_client") == 0) { // list saved files on dir
+            
+        } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
+            
+        }
+        */
     
     }
 

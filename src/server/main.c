@@ -7,6 +7,8 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <dirent.h>
+#include <errno.h>
 #include "../../include/common/common.h"
 #include "../../include/server/server.h"
 
@@ -41,6 +43,10 @@ int main(int argc, char *argv[])
 	clilen = sizeof(struct sockaddr_in);
 
 	printf("Accepting new connections...\n");
+
+    //TODO: Create here new thread to watch folder
+    // Inotify?
+    //	
 	
 	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
 		printf("Connection Accepted\n");
@@ -51,7 +57,7 @@ int main(int argc, char *argv[])
 		}
 
 		printf("Handler Assigned\n");
-		
+
 	}
 		
 	close(sockfd);

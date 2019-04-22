@@ -7,6 +7,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <dirent.h>
+#include <errno.h>
 #include "../../include/client/client.h"
 #include "../../include/common/common.h"
 
@@ -50,9 +52,14 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    //TODO: Create here new thread to watch folder
+    //TODO: Send username to server
 
+    //TODO: get_sync_dir, creates directory, if not created
+
+    //TODO: Create here new thread to watch folder
+    // Inotify?
     //
+
     while (exitCommand == FALSE) { 
         printf("\nEnter the Command: ");
         bzero(command, PACKET_SIZE);
@@ -94,7 +101,7 @@ int main(int argc, char *argv[])
             
         } else if (strcmp(option, "list_client") == 0) { // list saved files on dir
             
-        } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir and syncs
+        } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
             
         }
 

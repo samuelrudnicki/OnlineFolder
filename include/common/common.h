@@ -22,3 +22,7 @@ typedef struct packet {
     const char* _payload; // Dados do pacote
 } packet;
 
+void serializePacket(packet inPacket, char* serialized, int size);
+
+void deserializePacket(packet outPacket, char* serialized, int size);
+
