@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
 		}
 
 		printf("Handler Assigned\n");
+		
 	}
 		
 	close(sockfd);
