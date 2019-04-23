@@ -19,6 +19,7 @@ typedef struct packet {
     uint16_t seqn; // Numero de sequencia
     uint32_t total_size; // Numero total de fragmentos
     uint16_t length; // Comprimento do payload
+    char* fileName;
     const char* _payload; // Dados do pacote
 } packet;
 

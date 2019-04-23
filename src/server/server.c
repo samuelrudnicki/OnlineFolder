@@ -19,6 +19,14 @@ void *handleConnection(void *socketDescriptor) {
 
     //TODO: get_sync_dir, creates directory, if not created
 
+    //TODO: Create here new thread to watch folder
+    // Inotify?
+    //
+
+    //TODO: Thread to receive updates from client
+
+    //TODO: Linked list to link logged in clients
+
 	while(exitCommand == FALSE) {
         bzero(buffer, PACKET_SIZE);
         /* read from the socket */

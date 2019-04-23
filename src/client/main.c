@@ -60,6 +60,8 @@ int main(int argc, char *argv[])
     // Inotify?
     //
 
+    //TODO: Thread to receive updates from server
+
     while (exitCommand == FALSE) { 
         printf("\nEnter the Command: ");
         bzero(command, PACKET_SIZE);
@@ -76,6 +78,7 @@ int main(int argc, char *argv[])
         
         /* write in the socket */
         n = write(sockfd, command, strlen(command));
+        // usar send ou sendmsg
         if (n < 0) 
             printf("ERROR writing to socket\n");
 

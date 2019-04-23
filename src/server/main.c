@@ -44,10 +44,6 @@ int main(int argc, char *argv[])
 
 	printf("Accepting new connections...\n");
 
-    //TODO: Create here new thread to watch folder
-    // Inotify?
-    //	
-	
 	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
 		printf("Connection Accepted\n");
 
