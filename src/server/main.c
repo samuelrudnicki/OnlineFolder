@@ -10,7 +10,8 @@
 #include <dirent.h>
 #include <errno.h>
 #include "../../include/common/common.h"
-#include "../../include/server/server.h"
+#include "../../include/linkedlist/linkedlist.h"
+
 
 int main(int argc, char *argv[])
 {
@@ -19,6 +20,8 @@ int main(int argc, char *argv[])
 	pthread_t thread_id;
 	struct sockaddr_in serv_addr, cli_addr;
 	
+	createList(clientList);//Criando a lista
+
 	printf("Opening Socket...\n");
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {

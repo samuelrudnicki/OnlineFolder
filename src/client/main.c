@@ -12,9 +12,11 @@
 #include "../../include/client/client.h"
 #include "../../include/common/common.h"
 
+
 int main(int argc, char *argv[])
 {
     int sockfd, n;
+    int authorization = WAITING;
     int exitCommand = FALSE;
     char command[PACKET_SIZE];
     char response[PACKET_SIZE];
@@ -22,21 +24,22 @@ int main(int argc, char *argv[])
     char *path;
     struct sockaddr_in serv_addr;
     struct hostent *server;
+    int idUserName;
 
     bzero(command,PACKET_SIZE);
 
-    if (argc < 2) {
+    if (argc < 3) {
 		fprintf(stderr,"usage %s hostname\n", argv[0]);
 		exit(-1);
     }
 	
-	server = gethostbyname(argv[1]);
+	server = gethostbyname(argv[2]);
 	if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
         exit(-1);
     }
+    /*Test Lista*/
 
-    
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         printf("ERROR opening socket\n");
         exit(-1);
@@ -52,6 +55,7 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+
     //TODO: Send username to server
 
     //TODO: get_sync_dir, creates directory, if not created
@@ -60,9 +64,29 @@ int main(int argc, char *argv[])
     // Inotify?
     //
 
+    idUserName = write(sockfd, argv[1], strlen(argv[1]));
+    // envia o username para o servidor
+    if (idUserName < 0) 
+        printf("ERROR writing to socket\n");
+    /*
+    Espera autorização do servidor para validar a conexão
+    */
+    while(authorization == WAITING){
+        read(sockfd, response, PACKET_SIZE);
+        if(strcmp(response,"authorized") == 0){
+            authorization = TRUE;
+        }
+        if(strcmp(response,"notauthorized") == 0){
+            printf("There is a connection limit of up to two connected devices.\n");
+            authorization = FALSE;
+            exitCommand = TRUE;
+        }
+    }
+
     //TODO: Thread to receive updates from server
 
-    while (exitCommand == FALSE) { 
+    while (exitCommand == FALSE) {
+
         printf("\nEnter the Command: ");
         bzero(command, PACKET_SIZE);
         fgets(command, PACKET_SIZE, stdin);
@@ -106,6 +130,7 @@ int main(int argc, char *argv[])
             
         } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
             
+        } else if (strcmp(option, "printar") == 0) { // creates sync_dir_<username> and syncs
         }
 
     }

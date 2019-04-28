@@ -12,6 +12,8 @@
 
 #define FALSE 0
 
+#define WAITING 2
+
 #define PACKET_SIZE 1024
 
 typedef struct packet {
