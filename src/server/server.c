@@ -15,8 +15,6 @@
 #include "../../include/linkedlist/linkedlist.h"
 
 void *inotifyWatcher(void *pathToWatch){
-    //char watch[30];
-    //strcpy(watch, (char *) pathToWatch);
     int length;
     int fd;
     int wd;
