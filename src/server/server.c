@@ -49,11 +49,10 @@ void *handleConnection(void *socketDescriptor) {
         checkAndCreateDir(pathServerUsers);
         /*
         Lança a thread que fica olhando o diretorio do servidor
-        */
         if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) pathServerUsers) < 0){
 			    fprintf(stderr,"ERROR, could not create thread.\n");
 			    exit(-1);
-		}
+		}*/
         write(newsockfd, "authorized", 11);
     }
     else{
@@ -69,11 +68,12 @@ void *handleConnection(void *socketDescriptor) {
             checkAndCreateDir(pathServerUsers);
             /*
             Lança a thread que fica olhando o diretorio do servidor
-            */
+            
             if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) pathServerUsers) < 0){
 			    fprintf(stderr,"ERROR, could not create thread.\n");
 			    exit(-1);
 		    }
+            */
             write(newsockfd, "authorized", 11);
         }
     }
