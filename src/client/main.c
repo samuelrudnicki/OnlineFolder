@@ -18,15 +18,16 @@ int main(int argc, char *argv[])
     int sockfd, n;
     int authorization = WAITING;
     int exitCommand = FALSE;
-    char command[PACKET_SIZE];
-    char response[PACKET_SIZE];
+    char command[PAYLOAD_SIZE];
+    char response[PAYLOAD_SIZE];
     char *option;
     char *path;
     struct sockaddr_in serv_addr;
     struct hostent *server;
     int idUserName;
+    pthread_t thread_id;
 
-    bzero(command,PACKET_SIZE);
+    bzero(command,PAYLOAD_SIZE);
 
     if (argc < 3) {
 		fprintf(stderr,"usage %s hostname\n", argv[0]);
@@ -56,14 +57,8 @@ int main(int argc, char *argv[])
     }
 
 
-    //TODO: Send username to server
-
     //TODO: get_sync_dir, creates directory, if not created
-
-    //TODO: Create here new thread to watch folder
-    // Inotify?
-    //
-
+    
     idUserName = write(sockfd, argv[1], strlen(argv[1]));
     // envia o username para o servidor
     if (idUserName < 0) 
@@ -72,8 +67,13 @@ int main(int argc, char *argv[])
     Espera autorização do servidor para validar a conexão
     */
     while(authorization == WAITING){
-        read(sockfd, response, PACKET_SIZE);
+        read(sockfd, response, PAYLOAD_SIZE);
         if(strcmp(response,"authorized") == 0){
+            checkAndCreateDir(argv[1]);
+            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) argv[1]) < 0){
+			    fprintf(stderr,"ERROR, could not create thread.\n");
+			    exit(-1);
+		    }
             authorization = TRUE;
         }
         if(strcmp(response,"notauthorized") == 0){
@@ -88,8 +88,8 @@ int main(int argc, char *argv[])
     while (exitCommand == FALSE) {
 
         printf("\nEnter the Command: ");
-        bzero(command, PACKET_SIZE);
-        fgets(command, PACKET_SIZE, stdin);
+        bzero(command, PAYLOAD_SIZE);
+        fgets(command, PAYLOAD_SIZE, stdin);
 
         option = strtok(command," ");
         path = strtok(NULL," ");
@@ -106,10 +106,10 @@ int main(int argc, char *argv[])
         if (n < 0) 
             printf("ERROR writing to socket\n");
 
-        bzero(response, PACKET_SIZE);
+        bzero(response, PAYLOAD_SIZE);
         
         /* read from the socket */
-        n = read(sockfd, response, PACKET_SIZE);
+        n = read(sockfd, response, PAYLOAD_SIZE);
         if (n < 0) 
             printf("ERROR reading from socket\n");
 
