@@ -15,7 +15,8 @@
 #include "../../include/linkedlist/linkedlist.h"
 
 void *handleConnection(void *socketDescriptor) {
-    char buffer[PAYLOAD_SIZE];
+    packet incomingPacket;
+    char buffer[PACKET_SIZE];
     int exitCommand = FALSE;
     int n;
     int newsockfd = *(int*)socketDescriptor;
@@ -80,12 +81,12 @@ void *handleConnection(void *socketDescriptor) {
 
     /********************************************/
 	while(exitCommand == FALSE) {
-        bzero(buffer, PAYLOAD_SIZE);
+        bzero(buffer, PACKET_SIZE);
         /* read from the socket */
-        n = read(newsockfd, buffer, PAYLOAD_SIZE);
+        n = read(newsockfd, buffer, PACKET_SIZE);
         if (n < 0) 
             printf("ERROR reading from socket");
-        printf("Socket %d - Command: %s\n", newsockfd, buffer);
+
 
         if(n == 0) {
             printf("Empty response, closing\n");
@@ -106,6 +107,9 @@ void *handleConnection(void *socketDescriptor) {
         n = write(newsockfd,"Executing Command...", 22);
         if (n < 0) 
             printf("ERROR writing to socket");
+
+        
+        deserializePacket(&incomingPacket,buffer);
         
         if(strcmp(buffer,"exit\n") == 0) {
             printf("Exit command, closing\n");
