@@ -88,7 +88,7 @@ void upload(int sockfd, char* path, char* clientName) {
     int status;
     int fileSize;
     int i = 0;
-    char buffer[PAYLOAD_SIZE];
+    char buffer[PAYLOAD_SIZE] = {0};
     char* fileName;
     uint16_t nread;
     uint32_t totalSize;
@@ -107,8 +107,6 @@ void upload(int sockfd, char* path, char* clientName) {
     fileSize = ftell(fp);
     fseek(fp,0,SEEK_SET);
 
-    nread = fread(buffer,1,sizeof(buffer),fp);
-
     totalSize = fileSize / PAYLOAD_SIZE;
 
     // Pega o nome do arquivo a partir do path
@@ -119,8 +117,6 @@ void upload(int sockfd, char* path, char* clientName) {
         fileName = path;
     }
 
-    
-
     packetToUpload.type = TYPE_UPLOAD;
     packetToUpload.seqn = i;
     packetToUpload.length = nread;
@@ -129,8 +125,7 @@ void upload(int sockfd, char* path, char* clientName) {
     strncpy(packetToUpload.clientName,clientName,CLIENT_NAME_SIZE);
     strncpy(packetToUpload._payload,buffer,PAYLOAD_SIZE);
     
-    serializePacket(&packetToUpload,serialized);
-        
+    serializePacket(&packetToUpload,serialized);       
     
     /* write in the socket */
 
@@ -149,7 +144,6 @@ void upload(int sockfd, char* path, char* clientName) {
 
     while((nread = fread(buffer,1,sizeof(buffer),fp)) > 0) {
         memset(serialized,'\0',sizeof(serialized));
-        i++;
 
         packetToUpload.type = TYPE_DATA;
         packetToUpload.seqn = i;
@@ -173,8 +167,24 @@ void upload(int sockfd, char* path, char* clientName) {
 
         printf("%s\n",response);
 
+        i++;
+
     }
     
+}
+
+
+void download(int sockfd, char* fileName, char* clientName) {
+    int status;
+    int fileSize;
+    int i = 0;
+    char buffer[PAYLOAD_SIZE];
+    uint16_t nread;
+    uint32_t totalSize;
+    FILE *fp;
+    char response[PAYLOAD_SIZE];
+    char serialized[PACKET_SIZE];
+    packet packetToDownload;
 }
 
 
