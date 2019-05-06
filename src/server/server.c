@@ -15,7 +15,7 @@
 #include "../../include/linkedlist/linkedlist.h"
 
 void *handleConnection(void *socketDescriptor) {
-    char buffer[PACKET_SIZE];
+    char buffer[PAYLOAD_SIZE];
     int exitCommand = FALSE;
     int n;
     int newsockfd = *(int*)socketDescriptor;
@@ -32,8 +32,8 @@ void *handleConnection(void *socketDescriptor) {
 
     /*************************************/
     //Reads the client name and update/search on the client list.
-    bzero(buffer, PACKET_SIZE);
-    idUserName = read(newsockfd,buffer,PACKET_SIZE);
+    bzero(buffer, PAYLOAD_SIZE);
+    idUserName = read(newsockfd,buffer,PAYLOAD_SIZE);
     if(idUserName < 0)
         printf("ERROR reading from socket");
     strcpy(userName , buffer);
@@ -80,9 +80,9 @@ void *handleConnection(void *socketDescriptor) {
 
     /********************************************/
 	while(exitCommand == FALSE) {
-        bzero(buffer, PACKET_SIZE);
+        bzero(buffer, PAYLOAD_SIZE);
         /* read from the socket */
-        n = read(newsockfd, buffer, PACKET_SIZE);
+        n = read(newsockfd, buffer, PAYLOAD_SIZE);
         if (n < 0) 
             printf("ERROR reading from socket");
         printf("Socket %d - Command: %s\n", newsockfd, buffer);

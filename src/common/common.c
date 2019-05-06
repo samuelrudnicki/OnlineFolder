@@ -12,11 +12,74 @@
 #include <sys/inotify.h>
 #include "../../include/common/common.h"
 
-void serializePacket(packet inPacket, char* serialized, int size) {
+void serializePacket(packet* inPacket, char* serialized) {
+    uint16_t* buffer16 = (uint16_t*) serialized;
+    uint32_t* buffer32;
+    char* buffer;
+    int i = 0;
+
+    *buffer16 = htons(inPacket->type);
+    buffer16++;
+    *buffer16 = htons(inPacket->seqn);
+    buffer16++;
+    *buffer16 = htons(inPacket->length);
+    buffer16++;
+    buffer32 = (uint32_t*) buffer16;
+    *buffer32 = htonl(inPacket->total_size);
+    buffer32++;
+    buffer = (char*)buffer32;
+
+    for(i = 0; i < CLIENT_NAME_SIZE; i++) {
+        *buffer = inPacket->clientName[i];
+        buffer++;
+    }
+
+    for(i = 0; i < FILENAME_SIZE; i++) {
+        *buffer = inPacket->fileName[i];
+        buffer++;
+    }
+
+    for(i = 0; i < PAYLOAD_SIZE; i++) {
+        *buffer = inPacket->_payload[i];
+        buffer++;
+    }
+
     return;
 }
 
-void deserializePacket(packet outPacket, char* serialized, int size) {
+void deserializePacket(packet* outPacket, char* serialized) {
+    uint16_t* buffer16 = (uint16_t*) serialized;
+    uint32_t* buffer32;
+    char* buffer;
+    int i = 0;
+
+    outPacket->type = ntohs(*buffer16);
+    buffer16++;
+    outPacket->seqn = ntohs(*buffer16);
+    buffer16++;
+    outPacket->length = ntohs(*buffer16);
+    buffer16++;
+    buffer32 = (uint32_t*)buffer16;
+    outPacket->total_size = ntohl(*buffer32);
+    buffer32++;
+    buffer = (char*)buffer32;
+
+    for(i = 0; i < CLIENT_NAME_SIZE; i++) {
+        outPacket->clientName[i] = *buffer;
+        buffer++;
+    }
+
+    for(i = 0; i < FILENAME_SIZE; i++) {
+        outPacket->fileName[i] = *buffer;
+        buffer++;
+    }
+
+    for(i = 0; i < PAYLOAD_SIZE; i++) {
+        outPacket->_payload[i] = *buffer;
+        buffer++;
+    }
+
+
     return;
 }
 /*
