@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     int idUserName;
+    pthread_t thread_id;
 
     bzero(command,PACKET_SIZE);
 
@@ -56,14 +57,8 @@ int main(int argc, char *argv[])
     }
 
 
-    //TODO: Send username to server
-
     //TODO: get_sync_dir, creates directory, if not created
-
-    //TODO: Create here new thread to watch folder
-    // Inotify?
-    //
-
+    
     idUserName = write(sockfd, argv[1], strlen(argv[1]));
     // envia o username para o servidor
     if (idUserName < 0) 
@@ -74,6 +69,11 @@ int main(int argc, char *argv[])
     while(authorization == WAITING){
         read(sockfd, response, PACKET_SIZE);
         if(strcmp(response,"authorized") == 0){
+            checkAndCreateDir(argv[1]);
+            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) argv[1]) < 0){
+			    fprintf(stderr,"ERROR, could not create thread.\n");
+			    exit(-1);
+		    }
             authorization = TRUE;
         }
         if(strcmp(response,"notauthorized") == 0){

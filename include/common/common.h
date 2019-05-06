@@ -16,6 +16,9 @@
 
 #define PACKET_SIZE 1024
 
+#define EVENT_SIZE  ( sizeof (struct inotify_event) )
+#define BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
+
 typedef struct packet {
     uint16_t type; // Tipo do pacote ( DATA | CMD )
     uint16_t seqn; // Numero de sequencia
@@ -28,4 +31,14 @@ typedef struct packet {
 void serializePacket(packet inPacket, char* serialized, int size);
 
 void deserializePacket(packet outPacket, char* serialized, int size);
+
+/*
+  Lança uma thread para ficar no watcher no path de argumento
+*/
+void *inotifyWatcher(void *pathToWatch);
+
+/*
+  Verifica se o usuario já tem o diretorio criado na pasta User com seu nome, e se não tiver já o cria
+*/
+int checkAndCreateDir(char *pathName);
 
