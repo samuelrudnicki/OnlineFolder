@@ -15,7 +15,7 @@
 
 int main(int argc, char *argv[])
 {
-    int sockfd, n;
+    int sockfd;
     int authorization = WAITING;
     int exitCommand = FALSE;
     char command[PAYLOAD_SIZE];
@@ -100,26 +100,12 @@ int main(int argc, char *argv[])
         printf("OPTION: %s\n", option);
         printf("PATH: %s\n", path);
         
-        /* write in the socket */
-        n = write(sockfd, command, strlen(command));
-        // usar send ou sendmsg
-        if (n < 0) 
-            printf("ERROR writing to socket\n");
-
-        bzero(response, PAYLOAD_SIZE);
-        
-        /* read from the socket */
-        n = read(sockfd, response, PAYLOAD_SIZE);
-        if (n < 0) 
-            printf("ERROR reading from socket\n");
-
-        printf("%s\n",response);
 
         // Switch for options
         if(strcmp(option,"exit\n") == 0) {
             exitCommand = TRUE;
         } else if (strcmp(option, "upload") == 0) { // upload from path
-            
+            upload(sockfd,path,argv[1]);          
         } else if (strcmp(option, "download") == 0) { // download to exec folder
             
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir

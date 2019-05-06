@@ -47,6 +47,7 @@ void serializePacket(packet* inPacket, char* serialized) {
     return;
 }
 
+
 void deserializePacket(packet* outPacket, char* serialized) {
     uint16_t* buffer16 = (uint16_t*) serialized;
     uint32_t* buffer32;
@@ -82,6 +83,101 @@ void deserializePacket(packet* outPacket, char* serialized) {
 
     return;
 }
+
+void upload(int sockfd, char* path, char* clientName) {
+    int status;
+    int fileSize;
+    int i = 0;
+    char buffer[PAYLOAD_SIZE];
+    char* fileName;
+    uint16_t nread;
+    uint32_t totalSize;
+    FILE *fp;
+    char response[PAYLOAD_SIZE];
+    char serialized[PACKET_SIZE];
+    packet packetToUpload;
+
+    // Pega o tamanho do arquivo
+    fp = fopen(path,"r");
+    if(fp == NULL) {
+        printf("ERROR Could not read file.\n");
+        return;
+    }
+    fseek(fp,0,SEEK_END);
+    fileSize = ftell(fp);
+    fseek(fp,0,SEEK_SET);
+
+    nread = fread(buffer,1,sizeof(buffer),fp);
+
+    totalSize = fileSize / PAYLOAD_SIZE;
+
+    // Pega o nome do arquivo a partir do path
+    fileName = strrchr(path,'/');
+    if(fileName != NULL){
+        fileName++;
+    } else {
+        fileName = path;
+    }
+
+    
+
+    packetToUpload.type = TYPE_UPLOAD;
+    packetToUpload.seqn = i;
+    packetToUpload.length = nread;
+    packetToUpload.total_size = totalSize;
+    strncpy(packetToUpload.fileName,fileName,FILENAME_SIZE);
+    strncpy(packetToUpload.clientName,clientName,CLIENT_NAME_SIZE);
+    strncpy(packetToUpload._payload,buffer,PAYLOAD_SIZE);
+    
+    serializePacket(&packetToUpload,serialized);
+        
+    
+    /* write in the socket */
+
+    status = write(sockfd, serialized, PACKET_SIZE);
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+
+    bzero(response, PAYLOAD_SIZE);
+    
+    /* read from the socket */
+    status = read(sockfd, response, PAYLOAD_SIZE);
+    if (status < 0) 
+        printf("ERROR reading from socket\n");
+
+    printf("%s\n",response);
+
+    while((nread = fread(buffer,1,sizeof(buffer),fp)) > 0) {
+        memset(serialized,'\0',sizeof(serialized));
+        i++;
+
+        packetToUpload.type = TYPE_DATA;
+        packetToUpload.seqn = i;
+        packetToUpload.length = nread;
+        strncpy(packetToUpload._payload,buffer,PAYLOAD_SIZE);
+
+        serializePacket(&packetToUpload,serialized);
+
+        status = write(sockfd, serialized, PACKET_SIZE);
+
+        if (status < 0) { 
+            printf("ERROR writing to socket\n");
+        }
+        
+            bzero(response, PAYLOAD_SIZE);
+    
+        /* read from the socket */
+        status = read(sockfd, response, PAYLOAD_SIZE);
+        if (status < 0) 
+            printf("ERROR reading from socket\n");
+
+        printf("%s\n",response);
+
+    }
+    
+}
+
+
 /*
 TODO: Avisar o servidor que aconteceu uma mudança e tratar a mesma...
 TODO: Criar uma tread no servidor que fica esperando esse aviso do cliente para com ele.
