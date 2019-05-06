@@ -116,7 +116,7 @@ void *handleConnection(void *socketDescriptor) {
                 download(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                 break;
             case TYPE_DOWNLOAD:
-            // send to client
+                upload(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                 break;
             case TYPE_DELETE:
             // delete from syncd dir

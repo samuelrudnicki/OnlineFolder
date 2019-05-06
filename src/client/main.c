@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
         } else if (strcmp(option, "upload") == 0) { // upload from path
             uploadCommand(sockfd,path,argv[1], FALSE);          
         } else if (strcmp(option, "download") == 0) { // download to exec folder
-            downloadCommand(sockfd,path,argv[1]);
+            downloadCommand(sockfd,path,argv[1], FALSE);
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
             
         } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir

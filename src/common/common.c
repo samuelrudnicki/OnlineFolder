@@ -196,6 +196,10 @@ void upload(int sockfd, char* path, char* clientName, int server) {
     }
 
     fp = fopen(finalPath,"r");
+    if(fp == NULL) {
+        printf("ERROR Could not read file.\n");
+        return;
+    }
 
     fseek(fp,0,SEEK_END);
     fileSize = ftell(fp);
@@ -292,7 +296,7 @@ void download(int sockfd, char* fileName, char* clientName, int server) {
 
 }
 
-void downloadCommand(int sockfd, char* path, char* clientName) {
+void downloadCommand(int sockfd, char* path, char* clientName, int server) {
     char* fileName;
     packet packetToDownload;
     char buffer[PAYLOAD_SIZE] = {0};
@@ -332,6 +336,8 @@ void downloadCommand(int sockfd, char* path, char* clientName) {
         printf("ERROR reading from socket\n");
 
     printf("%s\n",response);
+
+    download(sockfd,packetToDownload.fileName,packetToDownload.clientName,FALSE);
 
 }
 
