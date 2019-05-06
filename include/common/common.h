@@ -33,6 +33,12 @@
 
 #define TYPE_EXIT 90
 
+#define TYPE_LIST_SERVER 40
+
+#define TYPE_LIST_CLIENT 50
+
+#define  TYPE_GET_SYNC_DIR 60
+
 
 typedef struct packet {
     uint16_t type; // Tipo do pacote ( DATA | CMD )
@@ -52,6 +58,8 @@ void serializePacket(packet* inPacket, char* serialized);
 void deserializePacket(packet* outPacket, char* serialized);
 
 void upload(int sockfd, char* path, char* clientName);
+
+void download(int sockfd, char* fileName, char* clientName);
 
 /*
   Lança uma thread para ficar no watcher no path de argumento

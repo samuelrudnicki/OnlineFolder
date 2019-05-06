@@ -111,32 +111,42 @@ void *handleConnection(void *socketDescriptor) {
         
         deserializePacket(&incomingPacket,buffer);
         
-        if(strcmp(buffer,"exit\n") == 0) {
-            printf("Exit command, closing\n");
-            if(findNode(userName, clientList, &client_node)){
-                if(updateNumberOfDevices(client_node, newsockfd, REMOVEDEVICE)== SUCESS){
-                    exitCommand = TRUE;
+        switch(incomingPacket.type) {
+            case TYPE_UPLOAD:
+            // download to exec folder
+                break;
+            case TYPE_DOWNLOAD:
+            // send to client
+                break;
+            case TYPE_DELETE:
+            // delete from syncd dir
+                break;
+            case TYPE_LIST_SERVER:
+            // list user's saved files on dir
+                break;
+            case TYPE_LIST_CLIENT:
+            // list saved files on dir
+                break;
+            case TYPE_GET_SYNC_DIR:
+            // creates sync_dir_<username> and syncs
+                break;
+            case TYPE_EXIT:
+                printf("Exit command, closing\n");
+                if(findNode(userName, clientList, &client_node)){
+                    if(updateNumberOfDevices(client_node, newsockfd, REMOVEDEVICE)== SUCESS){
+                        exitCommand = TRUE;
+                    }
+                    else{
+                        printf("ERROR updating the client list");
+                    }
                 }
                 else{
-                    printf("ERROR updating the client list");
+                    printf("ERROR searching the client");
                 }
-            }
-            else{
-                printf("ERROR searching the client");
-            }
+                break;
+            default:
+                break;
         }
-        /* else if (strcmp(option, "download") == 0) { // download to exec folder
-            
-        } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
-            
-        } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir
-            
-        } else if (strcmp(option, "list_client") == 0) { // list saved files on dir
-            
-        } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
-            
-        }
-        */
     
     }
 
