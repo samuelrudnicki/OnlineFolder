@@ -57,9 +57,13 @@ void serializePacket(packet* inPacket, char* serialized);
 
 void deserializePacket(packet* outPacket, char* serialized);
 
-void upload(int sockfd, char* path, char* clientName);
+void upload(int sockfd, char* path, char* clientName, int server);
 
-void download(int sockfd, char* fileName, char* clientName);
+void uploadCommand(int sockfd, char* path, char* clientName, int server);
+
+void download(int sockfd, char* fileName, char* clientName, int server);
+
+void downloadCommand(int sockfd, char* path, char* clientName);
 
 /*
   Lança uma thread para ficar no watcher no path de argumento

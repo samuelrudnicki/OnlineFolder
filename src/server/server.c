@@ -23,7 +23,7 @@ void *handleConnection(void *socketDescriptor) {
     int idUserName;
     char *userName = malloc(sizeof(userName));
     char pathServerUsers[30] = "";
-    pthread_t thread_id;
+
 
   
     //TODO: get_sync_dir, creates directory, if not created
@@ -113,7 +113,7 @@ void *handleConnection(void *socketDescriptor) {
         
         switch(incomingPacket.type) {
             case TYPE_UPLOAD:
-            // download to exec folder
+                download(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                 break;
             case TYPE_DOWNLOAD:
             // send to client
@@ -131,9 +131,9 @@ void *handleConnection(void *socketDescriptor) {
             // creates sync_dir_<username> and syncs
                 break;
             case TYPE_EXIT:
-                printf("Exit command, closing\n");
+                printf("Exit command, closing connection\n");
                 if(findNode(userName, clientList, &client_node)){
-                    if(updateNumberOfDevices(client_node, newsockfd, REMOVEDEVICE)== SUCESS){
+                    if(updateNumberOfDevices(client_node, newsockfd, REMOVEDEVICE) == SUCESS){
                         exitCommand = TRUE;
                     }
                     else{
