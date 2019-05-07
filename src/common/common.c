@@ -236,7 +236,7 @@ void upload(int sockfd, char* path, char* clientName, int server) {
             return;
         }
 
-        printf("%s\r", response);
+        printf("%s\n", response);
 
         i++;
     }
