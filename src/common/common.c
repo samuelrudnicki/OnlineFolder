@@ -10,6 +10,8 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/inotify.h>
+#include <dirent.h>
+#include <time.h>
 #include "../../include/common/common.h"
 
 void serializePacket(packet* inPacket, char* serialized) {
@@ -422,4 +424,136 @@ int checkAndCreateDir(char *pathName){
             return 0;
         }
     }
+}
+void deleteCommand(int sockfd, char *path, char *clientName){
+    
+    char* fileName;
+    char serialized[PACKET_SIZE];
+    packet packetToDelete;
+    int status;
+    char response[PAYLOAD_SIZE];
+
+    fileName = getFileName(path);
+
+    setPacket(&packetToDelete,TYPE_DELETE,0,0,0,fileName,clientName,"");
+
+    serializePacket(&packetToDelete,serialized);
+
+    /* write in the socket */
+
+    status = write(sockfd, serialized, PACKET_SIZE);
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+
+    bzero(response, PAYLOAD_SIZE);
+    
+    /* read from the socket */
+    status = read(sockfd, response, PAYLOAD_SIZE);
+    if (status < 0) 
+        printf("ERROR reading from socket\n");
+
+    printf("%s\n",response);
+
+}
+/* Pega o nome do arquivo a partir do path */
+char* getFileName(char *path){
+    char* fileName;
+    fileName = strrchr(path,'/');
+    if(fileName != NULL){
+        fileName++;
+    } else {
+        fileName = path;
+    }
+    return fileName;
+}
+/* Atribui valores ao packet */
+void setPacket(packet *packetToSet,int type, int seqn, int length, int total_size, char* fileName, char* clientName, char* payload){
+
+    packetToSet->type = type;
+    packetToSet->seqn = seqn;
+    packetToSet->length = length;
+    packetToSet->total_size = total_size;
+    strncpy(packetToSet->fileName,fileName,FILENAME_SIZE);
+    strncpy(packetToSet->clientName,clientName,CLIENT_NAME_SIZE);
+    strncpy(packetToSet->_payload,payload,PAYLOAD_SIZE);
+}
+//Wrapper delete file - return TRUE or FALSE
+void deleteFile(char* fileName){
+
+    remove(fileName);
+
+}
+
+void list_serverCommand(int sockfd, char *clientName){
+  
+    char serialized[PACKET_SIZE];
+    packet packetToListServer;
+    int status;
+    char response[PAYLOAD_SIZE];
+
+    setPacket(&packetToListServer,TYPE_LIST_SERVER,0,0,0,"",clientName,"");
+
+    serializePacket(&packetToListServer,serialized);
+
+
+    /* write in the socket */
+
+    status = write(sockfd, serialized, PACKET_SIZE);
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+
+    bzero(response, PAYLOAD_SIZE);
+    
+    /* read from the socket */
+    status = read(sockfd, response, PAYLOAD_SIZE);
+    if (status < 0) 
+        printf("ERROR reading from socket\n");
+
+    printf("%s\n",response);
+
+}
+char *pathToFile(char* pathUser, char* fileName){
+    
+    strcat(pathUser,"/");
+    strcat(pathUser,fileName);
+
+    return pathUser;
+}
+//TODO: retornar somente arquivos
+void list_files(int sockfd,char *pathToUser){
+
+    struct stat sb;
+    char mtime[40];
+    char atime[40];
+    char ctime[40];
+    char filePath[]="";
+    int status;
+    char response[PAYLOAD_SIZE];
+
+
+    DIR *dir;
+    struct dirent *lsdir;
+
+    dir = opendir(pathToUser);
+
+    /* print all the files and directories within directory */
+    while ((lsdir = readdir(dir)) != NULL )
+    {
+        bzero(filePath,sizeof(filePath));
+        strcpy(filePath,pathToFile(pathToUser,lsdir->d_name));
+        stat(filePath, &sb);
+        strftime(ctime, 40, "%c", localtime(&(sb.st_ctime)));
+        strftime(atime, 40, "%c", localtime(&(sb.st_atime)));
+        strftime(mtime, 40, "%c", localtime(&(sb.st_mtime)));
+        sprintf(response,"%s\nmtime: %s\natime: %s\nctime: %s\n\n",lsdir->d_name,mtime ,atime ,ctime);
+
+        status = write(sockfd, response, PAYLOAD_SIZE);
+        if (status < 0) 
+            printf("ERROR writing to socket\n");
+
+    }
+
+
+    closedir(dir);
+
 }

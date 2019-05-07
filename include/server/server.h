@@ -26,6 +26,7 @@ void appendNewClient(int socketNewClient, char* userName);
 */
 int updateNumberOfDevices(struct clientList *client_node, int socketNumber, int option);
 
+
 struct client
 {
   int devices[2];

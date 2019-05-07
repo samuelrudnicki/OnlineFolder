@@ -14,6 +14,7 @@
 #include "../../include/common/common.h"
 #include "../../include/linkedlist/linkedlist.h"
 
+
 void *handleConnection(void *socketDescriptor) {
     packet incomingPacket;
     char buffer[PACKET_SIZE];
@@ -110,7 +111,7 @@ void *handleConnection(void *socketDescriptor) {
 
         
         deserializePacket(&incomingPacket,buffer);
-        
+
         switch(incomingPacket.type) {
             case TYPE_UPLOAD:
                 download(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
@@ -119,10 +120,10 @@ void *handleConnection(void *socketDescriptor) {
                 upload(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                 break;
             case TYPE_DELETE:
-            // delete from syncd dir
+                deleteFile(pathToFile(pathServerUsers,incomingPacket.fileName));
                 break;
             case TYPE_LIST_SERVER:
-            // list user's saved files on dir
+                list_files(newsockfd,pathServerUsers);
                 break;
             case TYPE_LIST_CLIENT:
             // list saved files on dir

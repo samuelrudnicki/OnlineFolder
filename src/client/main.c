@@ -96,7 +96,6 @@ int main(int argc, char *argv[])
         if(path != NULL) {
             path = strtok(path,"\n");
         }
-
         printf("OPTION: %s\n", option);
         printf("PATH: %s\n", path);
         
@@ -109,9 +108,9 @@ int main(int argc, char *argv[])
         } else if (strcmp(option, "download") == 0) { // download to exec folder
             downloadCommand(sockfd,path,argv[1], FALSE);
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
-            
+            deleteCommand(sockfd,path,argv[1]);
         } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir
-            
+            list_serverCommand(sockfd,argv[1]);
         } else if (strcmp(option, "list_client") == 0) { // list saved files on dir
             
         } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
