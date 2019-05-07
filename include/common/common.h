@@ -14,14 +14,14 @@
 
 #define WAITING 2
 
-#define PAYLOAD_SIZE 1024
+#define PAYLOAD_SIZE 512
 
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
 
 #define CLIENT_NAME_SIZE 64
 
-#define FILENAME_SIZE 512
+#define FILENAME_SIZE 256
 
 #define TYPE_UPLOAD 10
 
