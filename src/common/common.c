@@ -284,7 +284,7 @@ void download(int sockfd, char* fileName, char* clientName, int server) {
 
         downloaded += (int)packetToDownload.length;
 
-        sprintf(response,"%s %u %s","Downloaded ",downloaded, " bytes from file.");
+        sprintf(response,"%s %u %s","Uploaded ",downloaded, " bytes from file.");
 
         status = write(sockfd, response, PAYLOAD_SIZE);
         
