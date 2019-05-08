@@ -459,6 +459,8 @@ void deleteCommand(int sockfd, char *path, char *clientName){
         printf("ERROR reading from socket\n");
     printf("%s", response);
 
+    free(fileName);
+
 }
 /* Pega o nome do arquivo a partir do path */
 char* getFileName(char *path){
@@ -578,6 +580,7 @@ void list_files(int sockfd,char *pathToUser, int server){
             }else{
                 printf("%s", response);
             }
+            free(filePath);
         }
     }
     closedir(dir);
