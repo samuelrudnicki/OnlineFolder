@@ -29,10 +29,20 @@ void *listener(void *socket){
         switch(incomingPacket.type) {
                 case TYPE_UPLOAD:
                     download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                    bzero(lastFile,100);
                     break;
                 case TYPE_INOTIFY:
                     download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                    bzero(lastFile,100);                    
                     break;
+                case TYPE_DELETE:
+                    delete(connectionSocket,incomingPacket.fileName, incomingPacket.clientName);
+                    bzero(lastFile,100);                    
+                    break;
+                case TYPE_INOTIFY_DELETE:
+                    delete(connectionSocket,incomingPacket.fileName, incomingPacket.clientName);
+                    bzero(lastFile,100);                    
+                    break;                    
                 default:
                     break;
         }

@@ -128,6 +128,14 @@ int main(int argc, char *argv[])
         } else if (strcmp(option, "download") == 0) { // download to exec folder
             downloadCommand(sockfd,path,argv[1], FALSE);
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
+            fileName = strrchr(path,'/');
+            if(fileName != NULL){
+                fileName++;
+            } 
+            else {
+                fileName = path;
+            }
+            strcpy(lastFile, fileName);
             deleteCommand(sockfd,path,argv[1]);
         } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir
             list_serverCommand(sockfd,argv[1]);

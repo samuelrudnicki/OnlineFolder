@@ -459,7 +459,19 @@ void *inotifyWatcher(void *inotifyClient){
                         }
                 }
                 else if ( event->mask & IN_DELETE || event->mask & IN_MOVED_FROM) {
-                    printf( "Remover o arquivo %s do servidor na pasta do %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);    
+                        if(strcmp(event->name,lastFile)!=0){
+                            //cria o caminho: username/file
+                            strcpy(pathComplet,((struct inotyClient*) inotifyClient)->userName );
+                            strcat(pathComplet,"/");
+                            strcat(pathComplet, event->name);
+                            printf( "\nThe file %s was deleted in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
+                            inotifyDelCommand(((struct inotyClient*) inotifyClient)->socket, pathComplet ,((struct inotyClient*) inotifyClient)->userName);        
+                        }
+                        else{
+                            printf( "\nThe file %s not was deleted in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
+                            bzero(lastFile,100);
+                        }
+                        
                     }
                     
             }
@@ -469,7 +481,6 @@ void *inotifyWatcher(void *inotifyClient){
     ( void ) inotify_rm_watch( fd, wd );
     ( void ) close( fd );
 }
-
 
 int checkAndCreateDir(char *pathName){
     struct stat sb;
@@ -558,17 +569,17 @@ void delete(int sockfd,char* fileName, char* pathUser){
     pathToFile(filePath,pathUser,fileName);
 
     if(remove(filePath)==0){
-        sprintf(response,"%s deleted sucessfully",fileName);
+        sprintf(response,"%s deleted sucessfully\n",fileName);
         status = write(sockfd, response, PAYLOAD_SIZE);
         if (status < 0) 
             printf("ERROR writing to socket\n");
     }else{
-        sprintf(response,"%s could not be deleted",fileName);
+        sprintf(response,"%s could not be deleted\n",fileName);
         status = write(sockfd, response, PAYLOAD_SIZE);
         if (status < 0) 
             printf("ERROR writing to socket\n");
     }
-        printf("response delete: %s",response);
+        printf("response delete: %s\n",response);
 
 }
 
@@ -654,7 +665,40 @@ void list_files(int sockfd,char *pathToUser, int server){
     }
 }
 void list_clientCommand(int sockfd, char *clientName){
-
     list_files(sockfd,clientName,FALSE);
+}
+void inotifyDelCommand(int sockfd, char *path, char *clientName){
+    
+    char* fileName;
+    char serialized[PACKET_SIZE];
+    packet packetToDelete;
+    int status;
+    char response[PAYLOAD_SIZE];
+
+    fileName = getFileName(path);
+
+    setPacket(&packetToDelete,TYPE_INOTIFY_DELETE,0,0,0,fileName,clientName,"");
+
+    serializePacket(&packetToDelete,serialized);
+
+    /* write in the socket */
+
+    status = write(sockfd, serialized, PACKET_SIZE);
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+
+    
+    /* captura o executing command */
+    bzero(response, PAYLOAD_SIZE);
+    status = read(sockfd, response, PAYLOAD_SIZE);
+    if (status < 0) 
+        printf("ERROR reading from socket\n");
+    printf("%s", response);
+    /* captura a resposta da funcao delete */
+    bzero(response, PAYLOAD_SIZE);
+    status = read(sockfd, response, PAYLOAD_SIZE);
+    if (status < 0) 
+        printf("ERROR reading from socket\n");
+    printf("%s", response);
 
 }

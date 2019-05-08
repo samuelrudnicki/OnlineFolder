@@ -41,6 +41,8 @@
 
 #define TYPE_INOTIFY 70
 
+#define TYPE_INOTIFY_DELETE 75
+
 
 typedef struct packet {
     uint16_t type; // Tipo do pacote ( DATA | CMD )
@@ -102,3 +104,4 @@ void deleteCommand(int sockfd, char *path, char *clientName);
 void list_serverCommand(int sockfd, char *clientName);
 void list_clientCommand(int sockfd, char *clientName);
 void list_files(int sockfd,char *pathToUser, int server);
+void inotifyDelCommand(int sockfd, char *path, char *clientName);

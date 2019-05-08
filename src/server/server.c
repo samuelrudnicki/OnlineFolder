@@ -122,14 +122,41 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
-
                 break;
             case TYPE_DOWNLOAD:
                 upload(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                 break;
             case TYPE_DELETE:
                 delete(newsockfd,incomingPacket.fileName, pathServerUsers);
+                write(newsockfd, buffer, PACKET_SIZE);
+                if(findNode(userName, clientList, &client_node)){
+                    otherSocketDev = otherSocketDevice(incomingPacket.clientName, newsockfd);
+                    if(otherSocket != -1){
+                        write(otherSocketDev, buffer, PACKET_SIZE);
+                    }
+                    else{
+                        //nao tem outro device
+                    }
+                }
+                else{
+                    //cliente nem esta na lista
+                }
                 break;
+            case TYPE_INOTIFY_DELETE:
+                delete(newsockfd,incomingPacket.fileName, pathServerUsers);
+                if(findNode(userName, clientList, &client_node)){
+                    otherSocketDev = otherSocketDevice(incomingPacket.clientName, newsockfd);
+                    if(otherSocket != -1){
+                        write(otherSocketDev, buffer, PACKET_SIZE);
+                    }
+                    else{
+                        //nao tem outro device
+                    }
+                }
+                else{
+                    //cliente nem esta na lista
+                }
+                break;            
             case TYPE_LIST_SERVER:
                 list_files(newsockfd,pathServerUsers, TRUE);
                 break;
