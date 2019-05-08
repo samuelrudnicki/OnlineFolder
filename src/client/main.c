@@ -100,6 +100,8 @@ int main(int argc, char *argv[])
         printf("\nEnter the Command: ");
         bzero(command, PAYLOAD_SIZE);
         fgets(command, PAYLOAD_SIZE, stdin);
+        if(strcspn(command, "\n")>0)
+            command[strcspn(command, "\n")] = 0;
 
         option = strtok(command," ");
         path = strtok(NULL," ");
@@ -126,11 +128,11 @@ int main(int argc, char *argv[])
         } else if (strcmp(option, "download") == 0) { // download to exec folder
             downloadCommand(sockfd,path,argv[1], FALSE);
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
-            
+            deleteCommand(sockfd,path,argv[1]);
         } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir
-            
+            list_serverCommand(sockfd,argv[1]);
         } else if (strcmp(option, "list_client") == 0) { // list saved files on dir
-            
+            list_clientCommand(sockfd,argv[1]);
         } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
             
         } else if (strcmp(option, "printar") == 0) { // creates sync_dir_<username> and syncs

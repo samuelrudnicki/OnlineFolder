@@ -81,7 +81,7 @@ void *handleConnection(void *socketDescriptor) {
         }
 
         /* write in the socket */
-        n = write(newsockfd,"Executing Command...", 22);
+        n = write(newsockfd,"Executing Command...\n", 23);
         if (n < 0) 
             printf("ERROR writing to socket");
 
@@ -128,13 +128,13 @@ void *handleConnection(void *socketDescriptor) {
                 upload(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                 break;
             case TYPE_DELETE:
-            // delete from syncd dir
+                delete(newsockfd,incomingPacket.fileName, pathServerUsers);
                 break;
             case TYPE_LIST_SERVER:
-            // list user's saved files on dir
+                list_files(newsockfd,pathServerUsers, TRUE);
                 break;
             case TYPE_LIST_CLIENT:
-            // list saved files on dir
+                
                 break;
             case TYPE_GET_SYNC_DIR:
             // creates sync_dir_<username> and syncs
