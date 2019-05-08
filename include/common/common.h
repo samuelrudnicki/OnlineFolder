@@ -96,3 +96,9 @@ void setPacket(packet *packetToSet,int type, int seqn, int length, int total_siz
  Atribui caminho relativo ate arquivo
 */
 void pathToFile(char* pathToFile ,char* pathUser, char* fileName);
+
+void delete(int sockfd,char* fileName, char* pathUser);
+void deleteCommand(int sockfd, char *path, char *clientName);
+void list_serverCommand(int sockfd, char *clientName);
+void list_clientCommand(int sockfd, char *clientName);
+void list_files(int sockfd,char *pathToUser, int server);
