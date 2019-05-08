@@ -25,9 +25,11 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     int idUserName;
-    pthread_t thread_id;
+    pthread_t thread_id, thread_id2;
+    char *fileName;
 
     bzero(command,PAYLOAD_SIZE);
+    bzero(lastFile,100);
 
     if (argc < 3) {
 		fprintf(stderr,"usage %s hostname\n", argv[0]);
@@ -67,11 +69,18 @@ int main(int argc, char *argv[])
     /*
     Espera autorização do servidor para validar a conexão
     */
+    struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
+    inotyClient->socket = sockfd;
+    strcpy(inotyClient->userName, argv[1]);
     while(authorization == WAITING){
         read(sockfd, response, PAYLOAD_SIZE);
         if(strcmp(response,"authorized") == 0){
             checkAndCreateDir(argv[1]);
-            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) argv[1]) < 0){
+            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) inotyClient) < 0){
+			    fprintf(stderr,"ERROR, could not create thread.\n");
+			    exit(-1);
+		    }
+            if(pthread_create(&thread_id2, NULL, listener, (void *) &sockfd) < 0){
 			    fprintf(stderr,"ERROR, could not create thread.\n");
 			    exit(-1);
 		    }
@@ -100,13 +109,20 @@ int main(int argc, char *argv[])
 
         printf("OPTION: %s\n", option);
         printf("PATH: %s\n", path);
-        
 
         // Switch for options
         if(strcmp(option,"exit\n") == 0) {
             exitCommand = TRUE;
         } else if (strcmp(option, "upload") == 0) { // upload from path
-            uploadCommand(sockfd,path,argv[1], FALSE);          
+            fileName = strrchr(path,'/');
+            if(fileName != NULL){
+                fileName++;
+            } 
+            else {
+                fileName = path;
+            }
+            strcpy(lastFile, fileName); 
+            uploadCommand(sockfd,path,argv[1], FALSE);   
         } else if (strcmp(option, "download") == 0) { // download to exec folder
             downloadCommand(sockfd,path,argv[1], FALSE);
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir

@@ -39,6 +39,8 @@
 
 #define  TYPE_GET_SYNC_DIR 60
 
+#define TYPE_INOTIFY 70
+
 
 typedef struct packet {
     uint16_t type; // Tipo do pacote ( DATA | CMD )
@@ -50,6 +52,12 @@ typedef struct packet {
     char _payload[PAYLOAD_SIZE]; // Dados do pacote
 } packet;
 
+char lastFile[100];
+
+struct inotyClient{
+  char userName[52];
+  int socket;
+};
 
 #define PACKET_SIZE (sizeof (struct packet))
 
@@ -64,6 +72,8 @@ void uploadCommand(int sockfd, char* path, char* clientName, int server);
 void download(int sockfd, char* fileName, char* clientName, int server);
 
 void downloadCommand(int sockfd, char* path, char* clientName, int server);
+
+void inotifyUpCommand(int sockfd, char* path, char* clientName, int server);
 
 /*
   Lança uma thread para ficar no watcher no path de argumento
