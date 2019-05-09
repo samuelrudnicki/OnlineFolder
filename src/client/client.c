@@ -13,20 +13,27 @@
 #include <sys/inotify.h>
 #include "../../include/common/common.h"
 #include "../../include/linkedlist/linkedlist.h"
+#include "../../include/client/client.h"
 
 void *listener(void *socket){
     //char command[PAYLOAD_SIZE];
     char response[PACKET_SIZE];
+    int status;
     int connectionSocket = *(int*)socket;
     packet incomingPacket;
     bzero(response, PACKET_SIZE);
 
     while(1){
-        read(connectionSocket, response, PACKET_SIZE);
+        status = read(connectionSocket, response, PACKET_SIZE);
         deserializePacket(&incomingPacket,response);
         strcpy(lastFile,incomingPacket.fileName);
 
-        printf("PACKET: %u %u %u %ul %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
+        if(status == 0) {
+            printf("\nConnection Closed.\n");
+            exit(-1);
+        }
+
+        printf("PACKET: %u %u %u %u %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
 
         switch(incomingPacket.type) {
                 case TYPE_UPLOAD:
@@ -46,87 +53,31 @@ void *listener(void *socket){
                     bzero(lastFile,100);                    
                     break;
                 case TYPE_DOWNLOAD_READY:
-                    upload(connectionSocket,clientPath,incomingPacket.clientName,FALSE);      
+                    upload(connectionSocket,clientPath,incomingPacket.clientName,FALSE);
+                    break;
+                case TYPE_UPLOAD_READY:
+                    download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                    break;
+                case TYPE_LIST_SERVER_READY:
+                    clientListServer(connectionSocket);
                 default:
                     break;
         }
     }
 }
 
-
-void clientUpload(int sockfd, char* path, char* clientName) {
-    uint16_t nread;
-    char buffer[PAYLOAD_SIZE] = {0};
-    uint32_t totalSize;
-    int fileSize;
-    FILE *fp;
+void clientListServer(int sockfd) {
     int status;
-    char* fileName;
-    char* finalPath = malloc(strlen(path) + strlen(clientName) + 11);
-    char serialized[PACKET_SIZE];
     char response[PAYLOAD_SIZE];
-    packet packetToUpload;
-    int i = 0;
-
-    // Pega o nome do arquivo a partir do path
-    fileName = strrchr(path,'/');
-    if(fileName != NULL){
-        fileName++;
-    } else {
-        fileName = path;
-    }
-
-    strncpy(packetToUpload.fileName,fileName,FILENAME_SIZE);
-    strncpy(packetToUpload.clientName,clientName,CLIENT_NAME_SIZE);
-
-
-    strncpy(finalPath, path, strlen(path) + 1);
-
-    fp = fopen(finalPath,"r");
-    if(fp == NULL) {
-        printf("ERROR Could not read file.\n");
-        return;
-    }
-
-    fseek(fp,0,SEEK_END);
-    fileSize = ftell(fp);
-    fseek(fp,0,SEEK_SET);
-
-    totalSize = fileSize / PAYLOAD_SIZE;
-
-    packetToUpload.total_size = totalSize;
-
-    while ((nread = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
-        memset(serialized, '\0', sizeof(serialized));
-
-        packetToUpload.type = TYPE_DATA;
-        packetToUpload.seqn = i;
-        packetToUpload.length = nread;
-
-        strncpy(packetToUpload._payload, buffer, PAYLOAD_SIZE);
-
-        serializePacket(&packetToUpload, serialized);
-
-        status = write(sockfd, serialized, PACKET_SIZE);
-
-        if(status < 0) {
-            printf("ERROR writing to socket\n");
-            return;
-        }
-
-        bzero(response, PAYLOAD_SIZE);
-
-        /* read from the socket */
+    do{
         status = read(sockfd, response, PAYLOAD_SIZE);
-        if(status < 0) {
+        if (status < 0) {
             printf("ERROR reading from socket\n");
             return;
         }
 
-        printf("%s\n", response);
+        fprintf(stderr,"%s",response);
 
-        i++;
-    }
-
-    fclose(fp);
+        bzero(response, PAYLOAD_SIZE);
+    } while (strcmp(response,"  ") != 0);
 }

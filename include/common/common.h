@@ -25,6 +25,8 @@
 
 #define TYPE_UPLOAD 10
 
+#define TYPE_UPLOAD_READY 11
+
 #define TYPE_DOWNLOAD 20
 
 #define TYPE_DOWNLOAD_READY 21
@@ -36,6 +38,8 @@
 #define TYPE_EXIT 90
 
 #define TYPE_LIST_SERVER 40
+
+#define TYPE_LIST_SERVER_READY 41
 
 #define TYPE_LIST_CLIENT 50
 
@@ -132,3 +136,13 @@ char* pathToFile(char* pathUser, char* fileName);
 */
 
 void readyToDownload(int sockfd, char* fileName, char* clientName);
+/*
+ Envia um packet falando que está prondo para Listar arquivos do servidor
+*/
+void readyToListServer(int sockfd);
+
+/*
+ Envia um packet falando que está prondo para dar Upload
+*/
+
+void readyToUpload(int sockfd, char* fileName, char* clientName);

@@ -685,3 +685,36 @@ void readyToDownload(int sockfd, char* fileName, char* clientName) {
 
 }
 
+void readyToUpload(int sockfd, char* fileName, char* clientName) {
+    packet outPacket;
+    int status;
+    char serialized[PACKET_SIZE];
+
+    setPacket(&outPacket,TYPE_UPLOAD_READY,0,0,0,fileName,clientName,"");
+
+    serializePacket(&outPacket,serialized);
+    status = write(sockfd,serialized,PACKET_SIZE);
+
+    if (status < 0) {
+        printf("ERROR writing to socket\n");
+        return;
+    }
+
+}
+
+void readyToListServer(int sockfd) {
+    packet outPacket;
+    int status;
+    char serialized[PACKET_SIZE];
+
+    setPacket(&outPacket,TYPE_LIST_SERVER_READY,0,0,0,"","","");
+    serializePacket(&outPacket,serialized);
+    status = write(sockfd,serialized,PACKET_SIZE);
+
+    if (status < 0) {
+        printf("ERROR writing to socket\n");
+        return;
+    }
+}
+
+

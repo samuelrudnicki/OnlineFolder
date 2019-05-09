@@ -118,16 +118,15 @@ void *handleConnection(void *socketDescriptor) {
 }
                 break;
             case TYPE_DOWNLOAD:
+                readyToUpload(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
                 upload(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                 break;
             case TYPE_DELETE:
                 delete(newsockfd,incomingPacket.fileName, pathServerUsers);
                 break;
             case TYPE_LIST_SERVER:
-                list_files(newsockfd,pathServerUsers, TRUE);
-                break;
-            case TYPE_LIST_CLIENT:
-                
+                readyToListServer(newsockfd);
+                list_files(newsockfd, pathServerUsers, TRUE);
                 break;
             case TYPE_GET_SYNC_DIR:
             // creates sync_dir_<username> and syncs
