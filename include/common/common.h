@@ -45,6 +45,8 @@
 
 #define  TYPE_GET_SYNC_DIR 60
 
+#define  TYPE_GET_SYNC_DIR_READY 61
+
 #define TYPE_INOTIFY 70
 
 #define TYPE_INOTIFY_DELETE 75
@@ -110,6 +112,11 @@ void list_clientCommand(int sockfd, char *clientName);
 void inotifyUpCommand(int sockfd, char* path, char* clientName, int server);
 
 /*
+  Packet do TYPE_GET_SYNC_DIR
+*/
+void getSyncDirCommand(int sockfd, char* clientName);
+
+/*
   Lança uma thread para ficar no watcher no path de argumento
 */
 void *inotifyWatcher(void *pathToWatch);
@@ -146,3 +153,14 @@ void readyToListServer(int sockfd);
 */
 
 void readyToUpload(int sockfd, char* fileName, char* clientName);
+
+/*
+ Envia um packet falando que está prondo para dar sync_dir
+*/
+
+void readyToSyncDir(int sockfd, char* clientName);
+
+/*
+ Recebe FileNames de uma pasta e faz o upload de cada uma
+*/
+void uploadAll(int sockfd,char *pathToUser);

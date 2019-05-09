@@ -60,6 +60,11 @@ void *listener(void *socket){
                     break;
                 case TYPE_LIST_SERVER_READY:
                     clientListServer(connectionSocket);
+                    break;
+                case TYPE_GET_SYNC_DIR_READY:
+                    clientSyncServer(connectionSocket, incomingPacket.clientName);
+                    printf("\nAll Files Updated.\n");
+                    break;
                 default:
                     break;
         }
@@ -70,6 +75,7 @@ void clientListServer(int sockfd) {
     int status;
     char response[PAYLOAD_SIZE];
     do{
+        bzero(response, PAYLOAD_SIZE);
         status = read(sockfd, response, PAYLOAD_SIZE);
         if (status < 0) {
             printf("ERROR reading from socket\n");
@@ -78,6 +84,35 @@ void clientListServer(int sockfd) {
 
         fprintf(stderr,"%s",response);
 
+        
+    } while (strcmp(response,"  ") != 0);
+}
+
+void clientSyncServer(int sockfd, char* clientName) {
+    int status;
+    char response[PAYLOAD_SIZE];
+    char buffer[PACKET_SIZE];
+    packet incomingPacket;
+
+    do{
         bzero(response, PAYLOAD_SIZE);
+        status = read(sockfd, response, PAYLOAD_SIZE);
+        if (status < 0) {
+            printf("ERROR reading from socket\n");
+            return;
+        }
+        if(strcmp(response,"  ") != 0) {
+            downloadCommand(sockfd,response,clientName,TRUE);
+            status = read(sockfd, buffer, PACKET_SIZE);
+            deserializePacket(&incomingPacket,buffer);
+            if(incomingPacket.type == TYPE_UPLOAD_READY) {
+                download(sockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+            } else {
+                printf("\nERROR Expected Upload Ready Packet\n");
+                return;
+            }
+        }
+
+        
     } while (strcmp(response,"  ") != 0);
 }

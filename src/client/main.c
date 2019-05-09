@@ -130,7 +130,8 @@ int main(int argc, char *argv[])
         } else if (strcmp(option, "list_client") == 0) { // list saved files on dir
             list_clientCommand(sockfd,argv[1]);
         } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
-            
+            checkAndCreateDir(argv[1]);
+            getSyncDirCommand(sockfd,argv[1]);            
         } else if (strcmp(option, "printar") == 0) { // creates sync_dir_<username> and syncs
         }
 

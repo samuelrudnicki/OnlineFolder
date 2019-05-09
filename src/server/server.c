@@ -23,7 +23,7 @@ void *handleConnection(void *socketDescriptor) {
     int newsockfd = *(int*)socketDescriptor;
     int idUserName;
     char *userName = malloc(sizeof(userName));
-    char pathServerUsers[30] = "";
+    char pathServerUsers[CLIENT_NAME_SIZE] = "";
     char auth[PACKET_SIZE] = {0};
 
 
@@ -129,7 +129,8 @@ void *handleConnection(void *socketDescriptor) {
                 list_files(newsockfd, pathServerUsers, TRUE);
                 break;
             case TYPE_GET_SYNC_DIR:
-            // creates sync_dir_<username> and syncs
+                readyToSyncDir(newsockfd,incomingPacket.clientName);
+                uploadAll(newsockfd,pathServerUsers);
                 break;
             case TYPE_EXIT:
                 printf("Exit command, closing connection\n");

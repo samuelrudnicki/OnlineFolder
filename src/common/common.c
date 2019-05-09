@@ -717,4 +717,78 @@ void readyToListServer(int sockfd) {
     }
 }
 
+void getSyncDirCommand(int sockfd, char* clientName) {
+    packet outPacket;
+    int status;
+    char serialized[PACKET_SIZE];
+
+    setPacket(&outPacket,TYPE_GET_SYNC_DIR,0,0,0,"",clientName,"");
+    serializePacket(&outPacket,serialized);
+    status = write(sockfd,serialized,PACKET_SIZE);
+
+    if (status < 0) {
+        printf("ERROR writing to socket\n");
+        return;
+    }
+}
+
+
+void readyToSyncDir(int sockfd, char* clientName) {
+    packet outPacket;
+    int status;
+    char serialized[PACKET_SIZE];
+
+    setPacket(&outPacket,TYPE_GET_SYNC_DIR_READY,0,0,0,"",clientName,"");
+    serializePacket(&outPacket,serialized);
+    status = write(sockfd,serialized,PACKET_SIZE);
+
+    if (status < 0) {
+        printf("ERROR writing to socket\n");
+        return;
+    }
+}
+
+void uploadAll(int sockfd,char *pathToUser) {
+    int status;
+    char response[PAYLOAD_SIZE];
+    char buffer[PACKET_SIZE] = {0};
+    packet incomingPacket;
+    DIR *dir;
+    struct dirent *lsdir;
+
+    bzero(response,PAYLOAD_SIZE);
+    dir = opendir(pathToUser);
+    /* print all the files within directory */
+    while ((lsdir = readdir(dir)) != NULL )
+    {
+        if(strcmp(lsdir->d_name,".") !=0 && strcmp(lsdir->d_name,"..") !=0){
+            sprintf(response,"%s",lsdir->d_name);
+            status = write(sockfd, response, PAYLOAD_SIZE);
+                if (status < 0) 
+                printf("ERROR writing to socket\n");
+            
+            status = read(sockfd,buffer,PACKET_SIZE);
+            if (status < 0) 
+                printf("ERROR reading socket\n");
+            deserializePacket(&incomingPacket,buffer);
+            if (incomingPacket.type == TYPE_DOWNLOAD) {
+                readyToUpload(sockfd,incomingPacket.fileName,incomingPacket.clientName);
+                upload(sockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+            } else {
+                printf("\nERROR Expected Download Packet\n");
+                return;
+            }
+            
+        }
+    }
+    closedir(dir);
+    sprintf(response,"  ");
+    status = write(sockfd, response, PAYLOAD_SIZE);
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+
+}
+
+
+
 
