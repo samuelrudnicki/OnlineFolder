@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
 			    exit(-1);
 		    }
             authorization = TRUE;
+
         }
         if(strcmp(response,"notauthorized") == 0){
             printf("There is a connection limit of up to two connected devices.\n");

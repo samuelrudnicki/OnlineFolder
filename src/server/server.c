@@ -25,6 +25,7 @@ void *handleConnection(void *socketDescriptor) {
     char *userName = malloc(sizeof(userName));
     char pathServerUsers[CLIENT_NAME_SIZE] = "";
     char auth[PACKET_SIZE] = {0};
+    int otherSocket;
 
 
   
@@ -100,7 +101,6 @@ void *handleConnection(void *socketDescriptor) {
             case TYPE_UPLOAD:
                 readyToDownload(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
                 download(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
-                int otherSocket;
                 uploadCommand(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                 upload(newsockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                 if(findNode(userName, clientList, &client_node)){
@@ -123,6 +123,19 @@ void *handleConnection(void *socketDescriptor) {
                 break;
             case TYPE_DELETE:
                 delete(newsockfd,incomingPacket.fileName, pathServerUsers);
+                deleteCommand(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
+                if(findNode(userName, clientList, &client_node)){
+                    otherSocket = otherSocketDevice(incomingPacket.clientName, newsockfd);
+                    if(otherSocket != -1){
+                        deleteCommand(otherSocket,incomingPacket.fileName,incomingPacket.clientName);
+                    }
+                    else{
+                        //nao tem outro device
+                    }
+                }
+                else{
+                    //cliente nem esta na lista
+                }
                 break;
             case TYPE_LIST_SERVER:
                 readyToListServer(newsockfd);

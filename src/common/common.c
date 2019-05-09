@@ -454,8 +454,6 @@ void deleteCommand(int sockfd, char *path, char *clientName){
         printf("ERROR reading from socket\n");
     printf("%s", response);*/
 
-    free(fileName);
-
 }
 /* Pega o nome do arquivo a partir do path */
 char* getFileName(char *path){
@@ -482,7 +480,7 @@ void setPacket(packet *packetToSet,int type, int seqn, int length, int total_siz
 
 void delete(int sockfd,char* fileName, char* pathUser){
 
-    int status;
+    //int status;
     char response[PAYLOAD_SIZE];
     char* filePath;
     bzero(response,PAYLOAD_SIZE);
@@ -491,16 +489,17 @@ void delete(int sockfd,char* fileName, char* pathUser){
 
     if(remove(filePath)==0){
         sprintf(response,"%s deleted sucessfully",fileName);
-        status = write(sockfd, response, PAYLOAD_SIZE);
+       /* status = write(sockfd, response, PAYLOAD_SIZE);
         if (status < 0) 
-            printf("ERROR writing to socket\n");
+            printf("ERROR writing to socket\n");*/
     }else{
         sprintf(response,"%s could not be deleted",fileName);
-        status = write(sockfd, response, PAYLOAD_SIZE);
+        /*status = write(sockfd, response, PAYLOAD_SIZE);
         if (status < 0) 
-            printf("ERROR writing to socket\n");
+            printf("ERROR writing to socket\n");*/
+
     }
-        printf("response delete: %s",response);
+        printf("response delete: %s\n",response);
 
 }
 
