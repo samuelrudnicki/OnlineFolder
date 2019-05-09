@@ -27,6 +27,8 @@
 
 #define TYPE_DOWNLOAD 20
 
+#define TYPE_DOWNLOAD_READY 21
+
 #define TYPE_DATA 01
 
 #define TYPE_DELETE 30
@@ -38,6 +40,10 @@
 #define TYPE_LIST_CLIENT 50
 
 #define  TYPE_GET_SYNC_DIR 60
+
+#define TYPE_INOTIFY 70
+
+#define TYPE_INOTIFY_DELETE 75
 
 
 typedef struct packet {
@@ -52,6 +58,16 @@ typedef struct packet {
 
 
 #define PACKET_SIZE (sizeof (struct packet))
+
+char lastFile[100];
+
+// Global entre listener e client
+char clientPath[768];
+
+struct inotyClient{
+  char userName[CLIENT_NAME_SIZE];
+  int socket;
+};
 
 void serializePacket(packet* inPacket, char* serialized);
 
@@ -87,6 +103,8 @@ void list_files(int sockfd,char *pathToUser, int server);
 
 void list_clientCommand(int sockfd, char *clientName);
 
+void inotifyUpCommand(int sockfd, char* path, char* clientName, int server);
+
 /*
   Lança uma thread para ficar no watcher no path de argumento
 */
@@ -108,3 +126,9 @@ void setPacket(packet *packetToSet,int type, int seqn, int length, int total_siz
  Atribui caminho relativo ate arquivo
 */
 char* pathToFile(char* pathUser, char* fileName);
+
+/*
+ Envia um packet falando que está prondo para baixar
+*/
+
+void readyToDownload(int sockfd, char* fileName, char* clientName);
