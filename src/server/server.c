@@ -24,7 +24,7 @@ void *handleConnection(void *socketDescriptor) {
     int idUserName;
     char *userName = malloc(sizeof(userName));
     char pathServerUsers[30] = "";
-    char* auth[PACKET_SIZE] = {0};
+    char auth[PACKET_SIZE] = {0};
 
 
   
