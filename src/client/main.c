@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
     int exitCommand = FALSE;
     char command[PAYLOAD_SIZE];
     char response[PAYLOAD_SIZE];
+    char buffer[PAYLOAD_SIZE] = {0};
     char *option;
     char *path;
     struct sockaddr_in serv_addr;
@@ -59,8 +60,8 @@ int main(int argc, char *argv[])
 
 
     //TODO: get_sync_dir, creates directory, if not created
-    
-    idUserName = write(sockfd, argv[1], strlen(argv[1]));
+    sprintf(buffer,"%s",argv[1]);
+    idUserName = write(sockfd, buffer, PAYLOAD_SIZE);
     // envia o username para o servidor
     if (idUserName < 0) 
         printf("ERROR writing to socket\n");
@@ -110,7 +111,9 @@ int main(int argc, char *argv[])
         printf("PATH: %s\n", path);
 
         // Stores clientPath for listener
-        sprintf(clientPath,"%s",path);
+        if(path != NULL) {
+            sprintf(clientPath,"%s",path);
+        }
         
 
         // Switch for options

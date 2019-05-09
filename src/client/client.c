@@ -21,12 +21,12 @@ void *listener(void *socket){
     packet incomingPacket;
     bzero(response, PACKET_SIZE);
 
-    printf("PACKET: %u %u %u %ul %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
-
     while(1){
         read(connectionSocket, response, PACKET_SIZE);
         deserializePacket(&incomingPacket,response);
         strcpy(lastFile,incomingPacket.fileName);
+
+        printf("PACKET: %u %u %u %ul %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
 
         switch(incomingPacket.type) {
                 case TYPE_UPLOAD:

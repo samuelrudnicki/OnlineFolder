@@ -145,6 +145,7 @@ void uploadCommand(int sockfd, char* path, char* clientName, int server) {
     if (status < 0) 
         printf("ERROR writing to socket\n");
 
+
     //bzero(response, PAYLOAD_SIZE);
     /* read from the socket */
     /*
@@ -172,7 +173,7 @@ void upload(int sockfd, char* path, char* clientName, int server) {
     char* fileName;
     char* finalPath = malloc(strlen(path) + strlen(clientName) + 11);
     char serialized[PACKET_SIZE];
-    char response[PAYLOAD_SIZE];
+    //char response[PAYLOAD_SIZE];
     packet packetToUpload;
     int i = 0;
 
@@ -229,9 +230,10 @@ void upload(int sockfd, char* path, char* clientName, int server) {
             return;
         }
 
-        bzero(response, PAYLOAD_SIZE);
+        //bzero(response, PAYLOAD_SIZE);
 
         /* read from the socket */
+        /*
         status = read(sockfd, response, PAYLOAD_SIZE);
         if(status < 0) {
             printf("ERROR reading from socket\n");
@@ -239,7 +241,7 @@ void upload(int sockfd, char* path, char* clientName, int server) {
         }
 
         printf("%s\n", response);
-
+        */
         i++;
     }
 
