@@ -26,6 +26,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     int idUserName;
+    char *fileName;
     pthread_t thread_id, thread_id2;
 
     bzero(command,PAYLOAD_SIZE);
@@ -74,7 +75,10 @@ int main(int argc, char *argv[])
     while(authorization == WAITING){
         read(sockfd, response, PACKET_SIZE);
         if(strcmp(response,"authorized") == 0){
+            // get_sync_dir
             checkAndCreateDir(argv[1]);
+            synchronize(sockfd,argv[1]);
+            //
             if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) inotyClient) < 0){
 			    fprintf(stderr,"ERROR, could not create thread.\n");
 			    exit(-1);
@@ -121,10 +125,26 @@ int main(int argc, char *argv[])
         if(strcmp(option,"exit") == 0) {
             exitCommand = TRUE;
         } else if (strcmp(option, "upload") == 0) { // upload from path
+            fileName = strrchr(path,'/');
+            if(fileName != NULL){
+                fileName++;
+            } 
+            else {
+                fileName = path;
+            }
+            strcpy(lastFile, fileName);
             uploadCommand(sockfd,path,argv[1], FALSE);          
         } else if (strcmp(option, "download") == 0) { // download to exec folder
             downloadCommand(sockfd,path,argv[1], FALSE);
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
+        fileName = strrchr(path,'/');
+            if(fileName != NULL){
+                fileName++;
+            } 
+            else {
+                fileName = path;
+            }
+            strcpy(lastFile, fileName);
             deleteCommand(sockfd,path,argv[1]);
         } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir
             list_serverCommand(sockfd,argv[1]);
