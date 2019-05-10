@@ -117,6 +117,29 @@ void clientSyncServer(int sockfd, char* clientName) {
     } while (strcmp(response,"  ") != 0);
 }
 
+void synchronize(int sockfd,char* clientName) {
+    int status;
+    char serialized[PACKET_SIZE] = {0};
+    packet incomingPacket;
+    printf("\nUpdating files...\n");
+
+    getSyncDirCommand(sockfd,clientName);  
+
+    status = read(sockfd,serialized,PACKET_SIZE);
+    if (status < 0) {
+        printf("ERROR reading from socket\n");
+        return;
+    }
+    deserializePacket(&incomingPacket,serialized);
+
+    if(incomingPacket.type == TYPE_GET_SYNC_DIR_READY) {
+        clientSyncServer(sockfd, incomingPacket.clientName);
+        printf("\nAll files Updated\n");
+    } else {
+        printf("\nERROR Expected Get_sync_dir_ready packet\n");
+    }
+}
+
 void *inotifyWatcher(void *inotifyClient){
     int length;
     int fd;

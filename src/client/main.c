@@ -75,7 +75,10 @@ int main(int argc, char *argv[])
     while(authorization == WAITING){
         read(sockfd, response, PACKET_SIZE);
         if(strcmp(response,"authorized") == 0){
+            // get_sync_dir
             checkAndCreateDir(argv[1]);
+            synchronize(sockfd,argv[1]);
+            //
             if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) inotyClient) < 0){
 			    fprintf(stderr,"ERROR, could not create thread.\n");
 			    exit(-1);
