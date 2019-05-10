@@ -11,9 +11,12 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/inotify.h>
-#include "../../include/common/common.h"
+#include <dirent.h>
+
 #include "../../include/linkedlist/linkedlist.h"
 #include "../../include/client/client.h"
+
+pthread_mutex_t syncDirMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *listener(void *socket){
     //char command[PAYLOAD_SIZE];
@@ -33,24 +36,24 @@ void *listener(void *socket){
             exit(-1);
         }
 
-        printf("PACKET: %u %u %u %u %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
-
+        // printf("PACKET: %u %u %u %u %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
+        pthread_mutex_lock(&clientMutex);
         switch(incomingPacket.type) {
                 case TYPE_UPLOAD:
                     download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
-                    bzero(lastFile,100);
+                    bzero(lastFile,FILENAME_SIZE);
                     break;
                 case TYPE_INOTIFY:
                     download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
-                    bzero(lastFile,100);                    
+                    bzero(lastFile,FILENAME_SIZE);                    
                     break;
                 case TYPE_DELETE:
                     delete(connectionSocket,incomingPacket.fileName, incomingPacket.clientName);
-                    bzero(lastFile,100);                    
+                    bzero(lastFile,FILENAME_SIZE);                    
                     break;
                 case TYPE_INOTIFY_DELETE:
                     delete(connectionSocket,incomingPacket.fileName, incomingPacket.clientName);
-                    bzero(lastFile,100);                    
+                    bzero(lastFile,FILENAME_SIZE);                    
                     break;
                 case TYPE_DOWNLOAD_READY:
                     upload(connectionSocket,clientPath,incomingPacket.clientName,FALSE);
@@ -68,6 +71,7 @@ void *listener(void *socket){
                 default:
                     break;
         }
+        pthread_mutex_unlock(&clientMutex);
     }
 }
 
@@ -106,8 +110,11 @@ void clientSyncServer(int sockfd, char* clientName) {
             status = read(sockfd, buffer, PACKET_SIZE);
             deserializePacket(&incomingPacket,buffer);
             if(incomingPacket.type == TYPE_UPLOAD_READY) {
+                strcpy(lastFile,incomingPacket.fileName);
+                pthread_mutex_lock(&syncDirMutex);// TODO: Fazer sincronização primeiro um, depois o outro
                 download(sockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
-            } else {
+                pthread_mutex_unlock(&syncDirMutex);
+            } else if(strcmp(response,"  ") != 0 ){
                 printf("\nERROR Expected Upload Ready Packet\n");
                 return;
             }
@@ -140,6 +147,30 @@ void synchronize(int sockfd,char* clientName) {
     }
 }
 
+void deleteAll(char* clientName) {
+    int first = FALSE;
+    DIR *dir;
+    struct dirent *lsdir;
+    dir = opendir(clientName);
+    char filePath[(CLIENT_NAME_SIZE + FILENAME_SIZE + 1)];
+    while ((lsdir = readdir(dir)) != NULL )
+    {
+        if(strcmp(lsdir->d_name,".") !=0 && strcmp(lsdir->d_name,"..") !=0){
+            if (!first) {
+                first = TRUE;
+                strcpy(lastFile,lsdir->d_name);
+            }
+            strcpy(filePath,"");
+            strcat(filePath,clientName);
+            strcat(filePath,"/");
+            strcat(filePath,lsdir->d_name);
+            remove(filePath); 
+        }
+    }
+    closedir(dir);
+}
+
+
 void *inotifyWatcher(void *inotifyClient){
     int length;
     int fd;
@@ -154,7 +185,7 @@ void *inotifyWatcher(void *inotifyClient){
     }
 
     wd = inotify_add_watch( fd, ((struct inotyClient*) inotifyClient)->userName, 
-                            IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO);
+                            IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_MODIFY);
 
      while (1) {
         int i = 0;
@@ -164,6 +195,7 @@ void *inotifyWatcher(void *inotifyClient){
             perror( "read" );
         }  
 
+        pthread_mutex_lock(&syncDirMutex);
         while ( i < length ) {
             struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
             if ( event->len ) {
@@ -172,7 +204,7 @@ void *inotifyWatcher(void *inotifyClient){
                     strcat(clientPath,"/");
                     strcat(clientPath,event->name);
                 }
-                if ( event->mask & IN_CREATE || event->mask & IN_MOVED_TO) {
+                if ( event->mask & IN_CREATE || event->mask & IN_MOVED_TO || event->mask & IN_MODIFY) {
                     if(strcmp(event->name,lastFile)!=0){
                             //cria o caminho: username/file
                             printf( "\nThe file %s was created in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
@@ -180,7 +212,7 @@ void *inotifyWatcher(void *inotifyClient){
                         }
                         else{
                             printf("Não precisa ativar o Inotify\n");
-                            bzero(lastFile,100);
+                            bzero(lastFile,FILENAME_SIZE);
                         }
                 }
                 else if ( event->mask & IN_DELETE || event->mask & IN_MOVED_FROM) {
@@ -192,7 +224,7 @@ void *inotifyWatcher(void *inotifyClient){
                         }
                         else{
                             printf("Não precisa ativar o Inotify\n");
-                            bzero(lastFile,100);
+                            bzero(lastFile,FILENAME_SIZE);
                         }
                         
                     }
@@ -200,6 +232,8 @@ void *inotifyWatcher(void *inotifyClient){
             }
             i += EVENT_SIZE + event->len;
         }
+        pthread_mutex_unlock(&syncDirMutex);
+
     }
     ( void ) inotify_rm_watch( fd, wd );
     ( void ) close( fd );

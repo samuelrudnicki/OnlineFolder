@@ -28,11 +28,7 @@ void *handleConnection(void *socketDescriptor) {
     int otherSocket;
 
 
-  
-    //TODO: get_sync_dir, creates directory, if not created
 
-
-    //TODO: Thread to receive updates from client
 
     /*************************************/
     //Reads the client name and update/search on the client list.

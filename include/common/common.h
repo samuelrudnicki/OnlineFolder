@@ -1,3 +1,5 @@
+#ifndef __common__
+#define __common__
 /**
  * 
  * 
@@ -158,3 +160,7 @@ void readyToSyncDir(int sockfd, char* clientName);
 void uploadAll(int sockfd,char *pathToUser);
 
 void inotifyDelCommand(int sockfd, char *path, char *clientName);
+
+
+
+#endif

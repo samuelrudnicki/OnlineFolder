@@ -1,3 +1,5 @@
+#ifndef __server__
+#define __server__
 #define MAXNAME 64
 #define MAXFILES 20
 #define FREEDEV -1
@@ -39,3 +41,5 @@ struct clientList
   struct client client;
   struct clientList *next;
 };
+
+#endif

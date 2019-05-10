@@ -13,6 +13,8 @@
 #include "../../include/common/common.h"
 
 
+pthread_mutex_t clientMutex = PTHREAD_MUTEX_INITIALIZER;
+
 int main(int argc, char *argv[])
 {
     int sockfd;
@@ -60,7 +62,6 @@ int main(int argc, char *argv[])
     }
 
 
-    //TODO: get_sync_dir, creates directory, if not created
     sprintf(buffer,"%s",argv[1]);
     idUserName = write(sockfd, buffer, PAYLOAD_SIZE);
     // envia o username para o servidor
@@ -77,13 +78,14 @@ int main(int argc, char *argv[])
         if(strcmp(response,"authorized") == 0){
             // get_sync_dir
             checkAndCreateDir(argv[1]);
+            deleteAll(argv[1]);
             synchronize(sockfd,argv[1]);
             //
-            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) inotyClient) < 0){
+            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) inotyClient) < 0){ // Inotify
 			    fprintf(stderr,"ERROR, could not create thread.\n");
 			    exit(-1);
 		    }
-            if(pthread_create(&thread_id2, NULL, listener, (void *) &sockfd) < 0){
+            if(pthread_create(&thread_id2, NULL, listener, (void *) &sockfd) < 0){ // Updates from server
 			    fprintf(stderr,"ERROR, could not create thread.\n");
 			    exit(-1);
 		    }
@@ -96,7 +98,7 @@ int main(int argc, char *argv[])
             exitCommand = TRUE;
         }
     }
-    //TODO: Thread to receive updates from server
+
 
     while (exitCommand == FALSE) {
 
@@ -120,7 +122,7 @@ int main(int argc, char *argv[])
             sprintf(clientPath,"%s",path);
         }
         
-
+        pthread_mutex_lock(&clientMutex);
         // Switch for options
         if(strcmp(option,"exit") == 0) {
             exitCommand = TRUE;
@@ -153,9 +155,8 @@ int main(int argc, char *argv[])
         } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
             checkAndCreateDir(argv[1]);
             getSyncDirCommand(sockfd,argv[1]);            
-        } else if (strcmp(option, "printar") == 0) { // creates sync_dir_<username> and syncs
         }
-
+        pthread_mutex_unlock(&clientMutex);
     }
 
 	close(sockfd);

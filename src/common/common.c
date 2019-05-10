@@ -610,6 +610,7 @@ void readyToSyncDir(int sockfd, char* clientName) {
     }
 }
 
+
 void uploadAll(int sockfd,char *pathToUser) {
     int status;
     char response[PAYLOAD_SIZE];
