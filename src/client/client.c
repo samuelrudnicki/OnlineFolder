@@ -116,3 +116,68 @@ void clientSyncServer(int sockfd, char* clientName) {
         
     } while (strcmp(response,"  ") != 0);
 }
+
+void *inotifyWatcher(void *inotifyClient){
+    int length;
+    int fd;
+    int wd;
+    char buffer[BUF_LEN];
+   
+
+    fd = inotify_init();
+
+        if ( fd < 0 ) {
+        perror( "inotify_init" );
+    }
+
+    wd = inotify_add_watch( fd, ((struct inotyClient*) inotifyClient)->userName, 
+                            IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO);
+
+     while (1) {
+        int i = 0;
+        length = read( fd, buffer, BUF_LEN );
+
+        if ( length < 0 ) {
+            perror( "read" );
+        }  
+
+        while ( i < length ) {
+            struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
+            if ( event->len ) {
+                if(event->name != NULL) {
+                    strcpy(clientPath, ((struct inotyClient*) inotifyClient)->userName);
+                    strcat(clientPath,"/");
+                    strcat(clientPath,event->name);
+                }
+                if ( event->mask & IN_CREATE || event->mask & IN_MOVED_TO) {
+                    if(strcmp(event->name,lastFile)!=0){
+                            //cria o caminho: username/file
+                            printf( "\nThe file %s was created in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
+                            inotifyUpCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);        
+                        }
+                        else{
+                            printf("Não precisa ativar o Inotify\n");
+                            bzero(lastFile,100);
+                        }
+                }
+                else if ( event->mask & IN_DELETE || event->mask & IN_MOVED_FROM) {
+                        if(strcmp(event->name,lastFile)!=0){
+                            //cria o caminho: username/file
+                            printf( "\nThe file %s was deleted in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
+                            inotifyDelCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName);
+                            //inotifyDelCommand(((struct inotyClient*) inotifyClient)->socket, ((struct inotyClient*) inotifyClient)->userName ,((struct inotyClient*) inotifyClient)->userName);        
+                        }
+                        else{
+                            printf("Não precisa ativar o Inotify\n");
+                            bzero(lastFile,100);
+                        }
+                        
+                    }
+                    
+            }
+            i += EVENT_SIZE + event->len;
+        }
+    }
+    ( void ) inotify_rm_watch( fd, wd );
+    ( void ) close( fd );
+}

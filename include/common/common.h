@@ -51,6 +51,8 @@
 
 #define TYPE_INOTIFY_DELETE 75
 
+#define PACKET_SIZE (sizeof (struct packet))
+
 
 typedef struct packet {
     uint16_t type; // Tipo do pacote ( DATA | CMD )
@@ -62,18 +64,8 @@ typedef struct packet {
     char _payload[PAYLOAD_SIZE]; // Dados do pacote
 } packet;
 
-
-#define PACKET_SIZE (sizeof (struct packet))
-
-char lastFile[100];
-
 // Global entre listener e client
 char clientPath[768];
-
-struct inotyClient{
-  char userName[CLIENT_NAME_SIZE];
-  int socket;
-};
 
 void serializePacket(packet* inPacket, char* serialized);
 
@@ -164,3 +156,5 @@ void readyToSyncDir(int sockfd, char* clientName);
  Recebe FileNames de uma pasta e faz o upload de cada uma
 */
 void uploadAll(int sockfd,char *pathToUser);
+
+void inotifyDelCommand(int sockfd, char *path, char *clientName);
