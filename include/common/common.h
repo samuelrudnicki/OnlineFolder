@@ -66,6 +66,7 @@ typedef struct packet {
     char _payload[PAYLOAD_SIZE]; // Dados do pacote
 } packet;
 
+
 // Global entre listener e client
 char clientPath[768];
 

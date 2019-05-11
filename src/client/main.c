@@ -15,6 +15,8 @@
 
 pthread_mutex_t clientMutex = PTHREAD_MUTEX_INITIALIZER;
 
+int inotifyInitialized = FALSE;
+
 int main(int argc, char *argv[])
 {
     int sockfd;
@@ -34,7 +36,7 @@ int main(int argc, char *argv[])
     bzero(command,PAYLOAD_SIZE);
 
     if (argc < 3) {
-		fprintf(stderr,"usage %s hostname\n", argv[0]);
+		fprintf(stderr,"usage %s clientname hostname\n", argv[0]);
 		exit(-1);
     }
 	
@@ -60,6 +62,9 @@ int main(int argc, char *argv[])
         printf("ERROR connecting\n");
         exit(-1);
     }
+
+    // Inicia semaforos
+    semInit();
 
 
     sprintf(buffer,"%s",argv[1]);

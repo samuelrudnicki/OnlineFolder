@@ -13,9 +13,12 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/inotify.h>
+#include <semaphore.h>
 #include "../../include/common/common.h"
 
 extern pthread_mutex_t clientMutex;
+
+extern sem_t inotifySemaphore; 
 
 struct inotyClient{
   char userName[64];
@@ -36,5 +39,9 @@ void clientSyncServer(int sockfd, char* clientName);
   Deleta todos os arquivos da pasta de um cliente
 */
 void deleteAll(char* clientName);
+/*
+ Inicializa Semaforos
+*/
+void semInit();
 
 #endif
