@@ -157,7 +157,6 @@ void synchronize(int sockfd,char* clientName) {
 }
 
 void deleteAll(char* clientName) {
-    int first = FALSE;
     DIR *dir;
     struct dirent *lsdir;
     dir = opendir(clientName);
@@ -165,10 +164,6 @@ void deleteAll(char* clientName) {
     while ((lsdir = readdir(dir)) != NULL )
     {
         if(strcmp(lsdir->d_name,".") !=0 && strcmp(lsdir->d_name,"..") !=0){
-            if (!first) {
-                first = TRUE;
-                strcpy(lastFile,lsdir->d_name);
-            }
             strcpy(filePath,"");
             strcat(filePath,clientName);
             strcat(filePath,"/");
@@ -218,7 +213,18 @@ void *inotifyWatcher(void *inotifyClient){
                     if (checkMask & IN_CREATE && (event->mask & IN_CLOSE_WRITE)) {
                         printf("Não precisa ativar o Inotify\n");
                         bzero(lastFile,FILENAME_SIZE);
-                    } else if ( event->mask & IN_CREATE || event->mask & IN_MOVED_TO || (event->mask & IN_CLOSE_WRITE)) {
+                    } else if ((event->mask & IN_CLOSE_WRITE)){
+                        if(strcmp(event->name,lastFile)!=0){
+                            //cria o caminho: username/file
+                            printf( "\nThe file %s was created in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
+                            inotifyUpCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);      
+                        }
+                        else{
+                            checkMask = event->mask;
+                            printf("Não precisa ativar o Inotify\n");
+                            bzero(lastFile,FILENAME_SIZE);
+                        }
+                    } else if ( event->mask & IN_CREATE || event->mask & IN_MOVED_TO) {
                     
                         if(strcmp(event->name,lastFile)!=0){
                             //cria o caminho: username/file
