@@ -17,12 +17,16 @@
 #include "../../include/linkedlist/linkedlist.h"
 #include "../../include/client/client.h"
 
+int inotifyInAction = FALSE;
 
 sem_t inotifySemaphore;
+
+sem_t listenerSemaphore;
 
 int synching = FALSE;
 
 void *listener(void *socket){
+    int semStatus;
     //char command[PAYLOAD_SIZE];
     char response[PACKET_SIZE];
     int status;
@@ -41,6 +45,9 @@ void *listener(void *socket){
         }
 
         //printf("PACKET: %u %u %u %u %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
+        if(inotifyInAction) {
+            sem_wait(&listenerSemaphore);
+        }
         pthread_mutex_lock(&clientMutex);
         switch(incomingPacket.type) {
                 case TYPE_UPLOAD:
@@ -80,6 +87,10 @@ void *listener(void *socket){
                     break;
         }
         pthread_mutex_unlock(&clientMutex);
+        sem_getvalue(&inotifySemaphore,&semStatus);
+        if (semStatus == 0) {
+            sem_post(&inotifySemaphore);
+        }
     }
 }
 
@@ -180,7 +191,7 @@ void *inotifyWatcher(void *inotifyClient){
     int fd;
     int wd;
     char buffer[BUF_LEN];
-    uint32_t checkMask;
+
 
    
 
@@ -193,16 +204,19 @@ void *inotifyWatcher(void *inotifyClient){
     wd = inotify_add_watch( fd, ((struct inotyClient*) inotifyClient)->userName, 
                             IN_CLOSE_WRITE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO);
 
-     while (1) {
+    while (1) {
         int i = 0;
+        inotifyInAction = FALSE;
         length = read( fd, buffer, BUF_LEN );
 
         if ( length < 0 ) {
             perror( "read" );
         }
-
+        
         if(!synching){   
             while ( i < length ) {
+                inotifyInAction = TRUE;
+                sem_wait(&inotifySemaphore);
                 struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
                 if ( event->len ) {
                     if(event->name != NULL) {
@@ -217,7 +231,7 @@ void *inotifyWatcher(void *inotifyClient){
                             inotifyUpCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);      
                         }
                         else{
-                            checkMask = event->mask;
+
                             printf("Não precisa ativar o Inotify\n");
                             bzero(lastFile,FILENAME_SIZE);
                         }
@@ -229,7 +243,7 @@ void *inotifyWatcher(void *inotifyClient){
                             inotifyUpCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);      
                         }
                         else{
-                            checkMask = event->mask;
+
                             printf("Não precisa ativar o Inotify\n");
                             bzero(lastFile,FILENAME_SIZE);
                         }
@@ -247,11 +261,14 @@ void *inotifyWatcher(void *inotifyClient){
                         }
                             
                     }
-                    checkMask = 0;    
+
                 }
                 i += EVENT_SIZE + event->len;
+                sem_post(&listenerSemaphore);
+
             }
         }
+        
         
 
     }
@@ -260,5 +277,6 @@ void *inotifyWatcher(void *inotifyClient){
 }
 
 void semInit() {
-    sem_init(&inotifySemaphore,0,0);
+    sem_init(&inotifySemaphore,0,1);
+    sem_init(&listenerSemaphore,0,0);
 }
