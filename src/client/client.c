@@ -61,16 +61,20 @@ void *listener(void *socket){
                     break;
                 case TYPE_DOWNLOAD_READY:
                     upload(connectionSocket,clientPath,incomingPacket.clientName,FALSE);
+                    bzero(lastFile,FILENAME_SIZE);  
                     break;
                 case TYPE_UPLOAD_READY:
                     download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                    bzero(lastFile,FILENAME_SIZE);  
                     break;
                 case TYPE_LIST_SERVER_READY:
                     clientListServer(connectionSocket);
+                    bzero(lastFile,FILENAME_SIZE);  
                     break;
                 case TYPE_GET_SYNC_DIR_READY:
                     clientSyncServer(connectionSocket, incomingPacket.clientName);
                     printf("\nAll Files Updated.\n");
+                    bzero(lastFile,FILENAME_SIZE);  
                     break;
                 default:
                     break;
@@ -115,7 +119,6 @@ void clientSyncServer(int sockfd, char* clientName) {
             status = read(sockfd, buffer, PACKET_SIZE);
             deserializePacket(&incomingPacket,buffer);
             if(incomingPacket.type == TYPE_UPLOAD_READY) {
-                strcpy(lastFile,incomingPacket.fileName);
                 download(sockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
             } else if(strcmp(buffer,"  ") != 0 ){
                 printf("\nERROR Expected Upload Ready Packet\n");
@@ -182,6 +185,7 @@ void *inotifyWatcher(void *inotifyClient){
     int fd;
     int wd;
     char buffer[BUF_LEN];
+    uint32_t checkMask;
 
    
 
@@ -211,32 +215,36 @@ void *inotifyWatcher(void *inotifyClient){
                         strcat(clientPath,"/");
                         strcat(clientPath,event->name);
                     }
-                    if ( event->mask & IN_CREATE || event->mask & IN_MOVED_TO || (event->mask & IN_CLOSE_WRITE)) {
-
+                    if (checkMask & IN_CREATE && (event->mask & IN_CLOSE_WRITE)) {
+                        printf("Não precisa ativar o Inotify\n");
+                        bzero(lastFile,FILENAME_SIZE);
+                    } else if ( event->mask & IN_CREATE || event->mask & IN_MOVED_TO || (event->mask & IN_CLOSE_WRITE)) {
+                    
                         if(strcmp(event->name,lastFile)!=0){
-                                //cria o caminho: username/file
-                                printf( "\nThe file %s was created in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
-                                inotifyUpCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);        
-                            }
-                            else{
-                                printf("Não precisa ativar o Inotify\n");
-                                bzero(lastFile,FILENAME_SIZE);
-                            }
+                            //cria o caminho: username/file
+                            printf( "\nThe file %s was created in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
+                            inotifyUpCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);      
+                        }
+                        else{
+                            checkMask = event->mask;
+                            printf("Não precisa ativar o Inotify\n");
+                            bzero(lastFile,FILENAME_SIZE);
+                        }
                     }
                     else if ( event->mask & IN_DELETE || event->mask & IN_MOVED_FROM) {
-                            if(strcmp(event->name,lastFile)!=0){
-                                //cria o caminho: username/file
-                                printf( "\nThe file %s was deleted in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
-                                inotifyDelCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName);
-                                //inotifyDelCommand(((struct inotyClient*) inotifyClient)->socket, ((struct inotyClient*) inotifyClient)->userName ,((struct inotyClient*) inotifyClient)->userName);        
-                            }
-                            else{
-                                printf("Não precisa ativar o Inotify\n");
-                                bzero(lastFile,FILENAME_SIZE);
-                            }
+                        if(strcmp(event->name,lastFile)!=0){
+                            //cria o caminho: username/file
+                            printf( "\nThe file %s was deleted in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
+                            inotifyDelCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName);
+                            //inotifyDelCommand(((struct inotyClient*) inotifyClient)->socket, ((struct inotyClient*) inotifyClient)->userName ,((struct inotyClient*) inotifyClient)->userName);        
+                        }
+                        else{
+                            printf("Não precisa ativar o Inotify\n");
+                            bzero(lastFile,FILENAME_SIZE);
+                        }
                             
                     }
-                        
+                    checkMask = 0;    
                 }
                 i += EVENT_SIZE + event->len;
             }
