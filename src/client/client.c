@@ -40,7 +40,7 @@ void *listener(void *socket){
             exit(-1);
         }
 
-        // printf("PACKET: %u %u %u %u %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
+        //printf("PACKET: %u %u %u %u %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
         pthread_mutex_lock(&clientMutex);
         switch(incomingPacket.type) {
                 case TYPE_UPLOAD:
@@ -191,7 +191,7 @@ void *inotifyWatcher(void *inotifyClient){
     }
 
     wd = inotify_add_watch( fd, ((struct inotyClient*) inotifyClient)->userName, 
-                            IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO);
+                            IN_CLOSE_WRITE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO);
 
      while (1) {
         int i = 0;
@@ -210,10 +210,7 @@ void *inotifyWatcher(void *inotifyClient){
                         strcat(clientPath,"/");
                         strcat(clientPath,event->name);
                     }
-                    if (checkMask & IN_CREATE && (event->mask & IN_CLOSE_WRITE)) {
-                        printf("Não precisa ativar o Inotify\n");
-                        bzero(lastFile,FILENAME_SIZE);
-                    } else if ((event->mask & IN_CLOSE_WRITE)){
+                    if ((event->mask & IN_CLOSE_WRITE)){
                         if(strcmp(event->name,lastFile)!=0){
                             //cria o caminho: username/file
                             printf( "\nThe file %s was created in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
@@ -224,7 +221,7 @@ void *inotifyWatcher(void *inotifyClient){
                             printf("Não precisa ativar o Inotify\n");
                             bzero(lastFile,FILENAME_SIZE);
                         }
-                    } else if ( event->mask & IN_CREATE || event->mask & IN_MOVED_TO) {
+                    } else if (event->mask & IN_MOVED_TO) {
                     
                         if(strcmp(event->name,lastFile)!=0){
                             //cria o caminho: username/file
