@@ -18,7 +18,9 @@
 
 extern pthread_mutex_t clientMutex;
 
-extern sem_t inotifySemaphore; 
+extern sem_t inotifySemaphore;
+
+extern sem_t writerSemaphore;
 
 struct inotyClient{
   char userName[64];
