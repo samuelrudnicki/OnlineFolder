@@ -14,6 +14,7 @@
 
 
 pthread_mutex_t clientMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t writeListenMutex = PTHREAD_MUTEX_INITIALIZER;
 
 int inotifyInitialized = FALSE;
 
@@ -131,6 +132,8 @@ int main(int argc, char *argv[])
         }
         
         pthread_mutex_lock(&clientMutex);
+        pthread_mutex_lock(&writeListenMutex);
+
         // Switch for options
         if(strcmp(option,"exit") == 0) {
             exitCommand = TRUE;
@@ -147,7 +150,7 @@ int main(int argc, char *argv[])
         } else if (strcmp(option, "download") == 0) { // download to exec folder
             error = downloadCommand(sockfd,path,argv[1], FALSE);
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
-        fileName = strrchr(path,'/');
+            fileName = strrchr(path,'/');
             if(fileName != NULL){
                 fileName++;
             } 
@@ -167,8 +170,12 @@ int main(int argc, char *argv[])
             printf("\nInvalid Command.\n");
         }
         pthread_mutex_unlock(&clientMutex);
-        if((strcmp(option, "list_client") != 0 && error != ERRORCODE))
+        if((strcmp(option, "list_client") != 0 && error != ERRORCODE)){
             sem_wait(&writerSemaphore);
+        }else{
+            pthread_mutex_unlock(&writeListenMutex);
+        }
+
     }
 
 	close(sockfd);

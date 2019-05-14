@@ -18,6 +18,8 @@
 
 extern pthread_mutex_t clientMutex;
 
+extern pthread_mutex_t writeListenMutex;
+
 extern sem_t inotifySemaphore;
 
 extern sem_t writerSemaphore;

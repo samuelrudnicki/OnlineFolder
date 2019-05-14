@@ -97,6 +97,8 @@ void *listener(void *socket){
                     break;
         }
         pthread_mutex_unlock(&clientMutex);
+        pthread_mutex_unlock(&writeListenMutex);
+
         sem_getvalue(&inotifySemaphore,&semStatus);
         if (semStatus == 0) {
             sem_post(&inotifySemaphore);
@@ -226,7 +228,8 @@ void *inotifyWatcher(void *inotifyClient){
         if ( length < 0 ) {
             perror( "read" );
         }
-        
+        pthread_mutex_lock(&writeListenMutex);
+
         if(!synching){   
             while ( i < length ) {
                 inotifyInAction = TRUE;
@@ -281,11 +284,13 @@ void *inotifyWatcher(void *inotifyClient){
                 sem_post(&listenerSemaphore);
 
             }
+            
         }
-        
+        pthread_mutex_unlock(&writeListenMutex);
         
 
     }
+
     ( void ) inotify_rm_watch( fd, wd );
     ( void ) close( fd );
 }
