@@ -1,3 +1,5 @@
+#ifndef __common__
+#define __common__
 /**
  * 
  * 
@@ -7,6 +9,10 @@
  * */
 
 #define PORT 4000
+
+#define ERRORCODE -1
+
+#define SUCCESS 0
 
 #define TRUE 1
 
@@ -64,11 +70,17 @@ typedef struct packet {
     char _payload[PAYLOAD_SIZE]; // Dados do pacote
 } packet;
 
+
 // Global entre listener e client
 char clientPath[768];
 
+/*
+  Serializa um packet para um array de chars
+*/
 void serializePacket(packet* inPacket, char* serialized);
-
+/*
+  Desserializa um array de chars para um packet
+*/
 void deserializePacket(packet* outPacket, char* serialized);
 
 /**
@@ -77,9 +89,9 @@ void deserializePacket(packet* outPacket, char* serialized);
 void upload(int sockfd, char* path, char* clientName, int server);
 
 /**
- * Manda um Packet do TYPE_UPLOAD, depois envia usando a funcao upload
+ * Manda um Packet do TYPE_UPLOAD
  * */
-void uploadCommand(int sockfd, char* path, char* clientName, int server);
+int uploadCommand(int sockfd, char* path, char* clientName, int server);
 
 /**
  * Faz o download de uma stream de TYPE_DATA
@@ -87,26 +99,44 @@ void uploadCommand(int sockfd, char* path, char* clientName, int server);
 void download(int sockfd, char* fileName, char* clientName, int server);
 
 /**
- * Manda um Packet do TYPE_DOWNLOAD, depois fica pronto para receber uma stream TYPE_DATA usando a funcao download
+ * Manda um Packet do TYPE_DOWNLOAD
  * */
-void downloadCommand(int sockfd, char* path, char* clientName, int server);
+int downloadCommand(int sockfd, char* path, char* clientName, int server);
 
-void deleteCommand(int sockfd,char *path, char *clientName);
+/*
+  Envia um packet do TYPE_DELETE
+*/
+int deleteCommand(int sockfd,char *path, char *clientName);
 
+/*
+  Deleta o arquivo
+*/
 void delete(int sockfd, char* fileName, char* pathUser);
 
-void list_serverCommand(int sockfd, char *clientName);
+/*
+  Envia um packet do TYPE_LIST_SERVER
+*/
+int list_serverCommand(int sockfd, char *clientName);
 
+/*
+  Lista os arquivos se for cliente, se for servidor, envia a lista de arquivos
+*/
 void list_files(int sockfd,char *pathToUser, int server);
 
-void list_clientCommand(int sockfd, char *clientName);
+/*
+  Lista os arquivos
+*/
+int list_clientCommand(int sockfd, char *clientName);
 
+/*
+  Manda um packet falando que um arquivo apareceu na pasta e está pronto para upload
+*/
 void inotifyUpCommand(int sockfd, char* path, char* clientName, int server);
 
 /*
   Packet do TYPE_GET_SYNC_DIR
 */
-void getSyncDirCommand(int sockfd, char* clientName);
+int getSyncDirCommand(int sockfd, char* clientName);
 
 /*
   Lança uma thread para ficar no watcher no path de argumento
@@ -157,4 +187,11 @@ void readyToSyncDir(int sockfd, char* clientName);
 */
 void uploadAll(int sockfd,char *pathToUser);
 
+/*
+  Envia um packet falando que um arquivo foi deletado na pasta do cliente
+*/
 void inotifyDelCommand(int sockfd, char *path, char *clientName);
+
+
+
+#endif
