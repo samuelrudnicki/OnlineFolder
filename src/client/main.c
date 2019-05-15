@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
     while (exitCommand == FALSE) {
 
         bzero(command, PAYLOAD_SIZE);
+        fflush(stdin);
         fgets(command, PAYLOAD_SIZE, stdin);
         if(strcspn(command, "\n")>0)
             command[strcspn(command, "\n")] = 0;

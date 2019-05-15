@@ -33,6 +33,8 @@
 
 #define TYPE_UPLOAD_READY 11
 
+#define TYPE_MIRROR_UPLOAD 12
+
 #define TYPE_DOWNLOAD 20
 
 #define TYPE_DOWNLOAD_READY 21
@@ -192,6 +194,10 @@ void uploadAll(int sockfd,char *pathToUser);
 */
 void inotifyDelCommand(int sockfd, char *path, char *clientName);
 
+/*
+ Espelha um upload
+*/
+void mirrorUploadCommand(int sockfd, char *path, char *clientName);
 
 
 #endif

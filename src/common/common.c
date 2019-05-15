@@ -220,7 +220,7 @@ void upload(int sockfd, char* path, char* clientName, int server) {
         packetToUpload.type = TYPE_DATA;
         packetToUpload.seqn = i;
         packetToUpload.length = nread;
-        strncpy(packetToUpload._payload, buffer, PAYLOAD_SIZE);
+        memcpy(packetToUpload._payload, buffer, PAYLOAD_SIZE);
         serializePacket(&packetToUpload, serialized);
 
         status = write(sockfd, serialized, PACKET_SIZE);
@@ -239,14 +239,14 @@ void upload(int sockfd, char* path, char* clientName, int server) {
 
             memcpy(packetToUpload._payload, buffer, PAYLOAD_SIZE);
 
-            printf("\nPACKET UPLOAD:%u %u %u %u %s %s %s\n",packetToUpload.type, packetToUpload.seqn,packetToUpload.length, packetToUpload.total_size, packetToUpload.clientName, packetToUpload.fileName, packetToUpload._payload);
+            //printf("\nPACKET UPLOAD:%u %u %u %u %s %s %s\n",packetToUpload.type, packetToUpload.seqn,packetToUpload.length, packetToUpload.total_size, packetToUpload.clientName, packetToUpload.fileName, packetToUpload._payload);
 
 
             serializePacket(&packetToUpload, serialized);
 
             //do {
                 status = write(sockfd, serialized, PACKET_SIZE);
-                printf("\nStatus: %d\n",status);
+                //printf("\nStatus: %d\n",status);
 
             //} while(!(status < PACKET_SIZE && status != 0));
 
@@ -268,6 +268,10 @@ void upload(int sockfd, char* path, char* clientName, int server) {
             printf("%s\n", response);
             */
             status = read(sockfd,okBuf,3);
+            if (status <= 0) {
+                printf("ERROR reading from socket\n");
+                return;
+            }
             i++;
         }
     }
@@ -310,7 +314,7 @@ void download(int sockfd, char* fileName, char* clientName, int server) {
         } 
 
         deserializePacket(&packetToDownload,serialized);
-        printf("\nPACKET DOWNLOAD:%u %u %u %u %s %s %s\n",packetToDownload.type, packetToDownload.seqn,packetToDownload.length, packetToDownload.total_size, packetToDownload.clientName, packetToDownload.fileName, packetToDownload._payload);
+        //printf("\nPACKET DOWNLOAD:%u %u %u %u %s %s %s\n",packetToDownload.type, packetToDownload.seqn,packetToDownload.length, packetToDownload.total_size, packetToDownload.clientName, packetToDownload.fileName, packetToDownload._payload);
 
         if(packetToDownload.type == TYPE_DATA) {
             fwrite(packetToDownload._payload,1,packetToDownload.length,fp);
@@ -816,5 +820,27 @@ void inotifyDelCommand(int sockfd, char *path, char *clientName){
         printf("ERROR reading from socket\n");
     printf("%s", response);*/
 }
+
+void mirrorUploadCommand(int sockfd, char *path, char *clientName){
+    
+    char* fileName;
+    char serialized[PACKET_SIZE];
+    packet packetToDelete;
+    int status;
+    //char response[PAYLOAD_SIZE];
+
+    fileName = getFileName(path);
+
+    setPacket(&packetToDelete,TYPE_MIRROR_UPLOAD,0,0,0,fileName,clientName,"");
+
+    serializePacket(&packetToDelete,serialized);
+
+    /* write in the socket */
+
+    status = write(sockfd, serialized, PACKET_SIZE);
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+}
+
 
 

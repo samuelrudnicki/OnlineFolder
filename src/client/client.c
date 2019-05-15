@@ -62,6 +62,12 @@ void *listener(void *socket){
                     printf("\n%s Downloaded.\n", incomingPacket.fileName);
                     bzero(lastFile,FILENAME_SIZE);                    
                     break;
+                case TYPE_MIRROR_UPLOAD:
+                    downloadCommand(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                    printf("\nDownloading %s...\n", incomingPacket.fileName);
+                    download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                    printf("\n%s Downloaded.\n", incomingPacket.fileName);
+                    bzero(lastFile,FILENAME_SIZE); 
                 case TYPE_DELETE:
                     printf("\nDeleting %s...\n", incomingPacket.fileName);
                     delete(connectionSocket,incomingPacket.fileName, incomingPacket.clientName);
