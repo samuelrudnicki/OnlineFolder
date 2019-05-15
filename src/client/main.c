@@ -13,6 +13,13 @@
 #include "../../include/common/common.h"
 
 
+pthread_mutex_t clientMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t writeListenMutex = PTHREAD_MUTEX_INITIALIZER;
+
+int inotifyInitialized = FALSE;
+
+sem_t writerSemaphore;
+
 int main(int argc, char *argv[])
 {
     int sockfd;
@@ -20,17 +27,20 @@ int main(int argc, char *argv[])
     int exitCommand = FALSE;
     char command[PAYLOAD_SIZE];
     char response[PAYLOAD_SIZE];
+    char buffer[PAYLOAD_SIZE] = {0};
     char *option;
     char *path;
     struct sockaddr_in serv_addr;
     struct hostent *server;
     int idUserName;
-    pthread_t thread_id;
+    char *fileName;
+    int error;
+    pthread_t thread_id, thread_id2;
 
     bzero(command,PAYLOAD_SIZE);
 
     if (argc < 3) {
-		fprintf(stderr,"usage %s hostname\n", argv[0]);
+		fprintf(stderr,"usage %s clientname hostname\n", argv[0]);
 		exit(-1);
     }
 	
@@ -57,25 +67,39 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+    // Inicia semaforos
+    semInit();
 
-    //TODO: get_sync_dir, creates directory, if not created
-    
-    idUserName = write(sockfd, argv[1], strlen(argv[1]));
+
+    sprintf(buffer,"%s",argv[1]);
+    idUserName = write(sockfd, buffer, PAYLOAD_SIZE);
     // envia o username para o servidor
     if (idUserName < 0) 
         printf("ERROR writing to socket\n");
     /*
     Espera autorização do servidor para validar a conexão
     */
+    struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
+    inotyClient->socket = sockfd;
+    strcpy(inotyClient->userName, argv[1]);
     while(authorization == WAITING){
-        read(sockfd, response, PAYLOAD_SIZE);
+        read(sockfd, response, PACKET_SIZE);
         if(strcmp(response,"authorized") == 0){
+            // get_sync_dir
             checkAndCreateDir(argv[1]);
-            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) argv[1]) < 0){
+            deleteAll(argv[1]);
+            synchronize(sockfd,argv[1]);
+            //
+            if(pthread_create(&thread_id, NULL, inotifyWatcher, (void *) inotyClient) < 0){ // Inotify
+			    fprintf(stderr,"ERROR, could not create thread.\n");
+			    exit(-1);
+		    }
+            if(pthread_create(&thread_id2, NULL, listener, (void *) &sockfd) < 0){ // Updates from server
 			    fprintf(stderr,"ERROR, could not create thread.\n");
 			    exit(-1);
 		    }
             authorization = TRUE;
+
         }
         if(strcmp(response,"notauthorized") == 0){
             printf("There is a connection limit of up to two connected devices.\n");
@@ -84,12 +108,12 @@ int main(int argc, char *argv[])
         }
     }
 
-    //TODO: Thread to receive updates from server
+    printf("\nConsole Started, you can now enter commands.\n");
 
     while (exitCommand == FALSE) {
 
-        printf("\nEnter the Command: ");
         bzero(command, PAYLOAD_SIZE);
+        fflush(stdin);
         fgets(command, PAYLOAD_SIZE, stdin);
         if(strcspn(command, "\n")>0)
             command[strcspn(command, "\n")] = 0;
@@ -102,24 +126,55 @@ int main(int argc, char *argv[])
 
         printf("OPTION: %s\n", option);
         printf("PATH: %s\n", path);
+
+        // Stores clientPath for listener
+        if(path != NULL) {
+            sprintf(clientPath,"%s",path);
+        }
         
+        pthread_mutex_lock(&clientMutex);
+        pthread_mutex_lock(&writeListenMutex);
 
         // Switch for options
-        if(strcmp(option,"exit\n") == 0) {
+        if(strcmp(option,"exit") == 0) {
             exitCommand = TRUE;
         } else if (strcmp(option, "upload") == 0) { // upload from path
-            uploadCommand(sockfd,path,argv[1], FALSE);          
+            fileName = strrchr(path,'/');
+            if(fileName != NULL){
+                fileName++;
+            } 
+            else {
+                fileName = path;
+            }
+            strcpy(lastFile, fileName);
+            error = uploadCommand(sockfd,path,argv[1], FALSE);          
         } else if (strcmp(option, "download") == 0) { // download to exec folder
-            downloadCommand(sockfd,path,argv[1], FALSE);
+            error = downloadCommand(sockfd,path,argv[1], FALSE);
         } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
-            deleteCommand(sockfd,path,argv[1]);
+            fileName = strrchr(path,'/');
+            if(fileName != NULL){
+                fileName++;
+            } 
+            else {
+                fileName = path;
+            }
+            strcpy(lastFile, fileName);
+            error = deleteCommand(sockfd,path,argv[1]);
         } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir
-            list_serverCommand(sockfd,argv[1]);
+            error = list_serverCommand(sockfd,argv[1]);
         } else if (strcmp(option, "list_client") == 0) { // list saved files on dir
-            list_clientCommand(sockfd,argv[1]);
+            error = list_clientCommand(sockfd,argv[1]);
         } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
-            
-        } else if (strcmp(option, "printar") == 0) { // creates sync_dir_<username> and syncs
+            error = checkAndCreateDir(argv[1]);
+            error = getSyncDirCommand(sockfd,argv[1]);            
+        } else {
+            printf("\nInvalid Command.\n");
+        }
+        pthread_mutex_unlock(&clientMutex);
+        if((strcmp(option, "list_client") != 0 && error != ERRORCODE)){
+            sem_wait(&writerSemaphore);
+        }else{
+            pthread_mutex_unlock(&writeListenMutex);
         }
 
     }
