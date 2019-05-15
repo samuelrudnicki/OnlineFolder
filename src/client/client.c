@@ -72,6 +72,7 @@ void *listener(void *socket){
                         printf("\n%s Downloaded.\n", incomingPacket.fileName);
                         bzero(lastFile,FILENAME_SIZE);
                     }
+                    break;
                 case TYPE_DELETE:
                     printf("\nDeleting %s...\n", incomingPacket.fileName);
                     delete(connectionSocket,incomingPacket.fileName, incomingPacket.clientName);
