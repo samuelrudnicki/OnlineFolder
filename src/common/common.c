@@ -202,7 +202,7 @@ void upload(int sockfd, char* path, char* clientName, int server) {
         strncpy(finalPath, path, strlen(path) + 1);
     }
 
-    fp = fopen(finalPath,"r");
+    fp = fopen(finalPath,"rb");
     if(fp == NULL) {
         printf("ERROR Could not read file.\n");
         return;
@@ -237,7 +237,7 @@ void upload(int sockfd, char* path, char* clientName, int server) {
             packetToUpload.seqn = i;
             packetToUpload.length = nread;
 
-            strncpy(packetToUpload._payload, buffer, PAYLOAD_SIZE);
+            memcpy(packetToUpload._payload, buffer, PAYLOAD_SIZE);
 
             printf("\nPACKET UPLOAD:%u %u %u %u %s %s %s\n",packetToUpload.type, packetToUpload.seqn,packetToUpload.length, packetToUpload.total_size, packetToUpload.clientName, packetToUpload.fileName, packetToUpload._payload);
 
@@ -290,9 +290,9 @@ void download(int sockfd, char* fileName, char* clientName, int server) {
         strcat(path,clientName);
         strcat(path,"/");
         strcat(path,fileName);
-        fp = fopen(path,"w");
+        fp = fopen(path,"wb");
     } else {
-        fp = fopen(fileName,"w");
+        fp = fopen(fileName,"wb");
     }
     if(fp == NULL) {
         printf("ERROR Writing to file");
