@@ -102,8 +102,7 @@ void *handleConnection(void *socketDescriptor) {
                 if(findNode(userName, clientList, &client_node)){
                     otherSocket = otherSocketDevice(incomingPacket.clientName, newsockfd);
                     if(otherSocket != -1){
-                        uploadCommand(otherSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
-                        upload(otherSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                        mirrorUploadCommand(otherSocket,incomingPacket.fileName,incomingPacket.clientName);
                     }
                     else{
                         //nao tem outro device
@@ -119,8 +118,7 @@ void *handleConnection(void *socketDescriptor) {
                 if(findNode(userName, clientList, &client_node)){
                     otherSocket = otherSocketDevice(incomingPacket.clientName, newsockfd);
                     if(otherSocket != -1){
-                        uploadCommand(otherSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
-                        upload(otherSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                        mirrorUploadCommand(otherSocket,incomingPacket.fileName,incomingPacket.clientName);
                     }
                     else{
                         //nao tem outro device

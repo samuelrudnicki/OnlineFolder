@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
     while (exitCommand == FALSE) {
 
         bzero(command, PAYLOAD_SIZE);
+        fflush(stdin);
         fgets(command, PAYLOAD_SIZE, stdin);
         if(strcspn(command, "\n")>0)
             command[strcspn(command, "\n")] = 0;
@@ -137,6 +138,7 @@ int main(int argc, char *argv[])
         // Switch for options
         if(strcmp(option,"exit") == 0) {
             exitCommand = TRUE;
+            error = ERRORCODE;
         } else if (strcmp(option, "upload") == 0) { // upload from path
             fileName = strrchr(path,'/');
             if(fileName != NULL){
@@ -168,6 +170,7 @@ int main(int argc, char *argv[])
             error = getSyncDirCommand(sockfd,argv[1]);            
         } else {
             printf("\nInvalid Command.\n");
+            error = ERRORCODE;
         }
         pthread_mutex_unlock(&clientMutex);
         if((strcmp(option, "list_client") != 0 && error != ERRORCODE)){
