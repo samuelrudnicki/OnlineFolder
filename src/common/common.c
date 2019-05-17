@@ -22,8 +22,10 @@ void serializePacket(packet* inPacket, char* serialized) {
 
     *buffer16 = htons(inPacket->type);
     buffer16++;
-    *buffer16 = htons(inPacket->seqn);
-    buffer16++;
+    buffer32 = (uint32_t*) buffer16;
+    *buffer32 = htonl(inPacket->seqn);
+    buffer32++;
+    buffer16 = (uint16_t*) buffer32;
     *buffer16 = htons(inPacket->length);
     buffer16++;
     buffer32 = (uint32_t*) buffer16;
@@ -58,8 +60,10 @@ void deserializePacket(packet* outPacket, char* serialized) {
 
     outPacket->type = ntohs(*buffer16);
     buffer16++;
-    outPacket->seqn = ntohs(*buffer16);
-    buffer16++;
+    buffer32 = (uint32_t*)buffer16;
+    outPacket->seqn = ntohl(*buffer32);
+    buffer32++;
+    buffer16 = (uint16_t*)buffer32;
     outPacket->length = ntohs(*buffer16);
     buffer16++;
     buffer32 = (uint32_t*)buffer16;
@@ -239,18 +243,18 @@ void upload(int sockfd, char* path, char* clientName, int server) {
 
             memcpy(packetToUpload._payload, buffer, PAYLOAD_SIZE);
 
-            //printf("\nPACKET UPLOAD:%u %u %u %u %s %s %s\n",packetToUpload.type, packetToUpload.seqn,packetToUpload.length, packetToUpload.total_size, packetToUpload.clientName, packetToUpload.fileName, packetToUpload._payload);
+            //printf("\nPACKET UPLOAD:%u %u %u %u %s %s\n",packetToUpload.type, packetToUpload.seqn,packetToUpload.length, packetToUpload.total_size, packetToUpload.clientName, packetToUpload.fileName);
 
 
             serializePacket(&packetToUpload, serialized);
 
-            //do {
+            do {
                 status = write(sockfd, serialized, PACKET_SIZE);
                 //printf("\nStatus: %d\n",status);
 
-            //} while(!(status < PACKET_SIZE && status != 0));
+            } while((status < PACKET_SIZE && status > 0));
 
-            if(status < 0) {
+            if(status <= 0) {
                 printf("ERROR writing to socket\n");
                 return;
             }
@@ -305,18 +309,20 @@ void download(int sockfd, char* fileName, char* clientName, int server) {
 
     do {
         errorFlag = FALSE;
-        //do{
+        do{
             status = read(sockfd, serialized, PACKET_SIZE);
-        //} while(!(status < PACKET_SIZE && status != 0));
+        } while((status < PACKET_SIZE && status > 0));
         if (status <= 0) {
             printf("ERROR reading from socket\n");
             return;
         } 
 
         deserializePacket(&packetToDownload,serialized);
-        //printf("\nPACKET DOWNLOAD:%u %u %u %u %s %s %s\n",packetToDownload.type, packetToDownload.seqn,packetToDownload.length, packetToDownload.total_size, packetToDownload.clientName, packetToDownload.fileName, packetToDownload._payload);
+        //printf("\nPACKET DOWNLOAD:%u %u %u %u %s %s\n",packetToDownload.type, packetToDownload.seqn,packetToDownload.length, packetToDownload.total_size, packetToDownload.clientName, packetToDownload.fileName);
+        
 
         if(packetToDownload.type == TYPE_DATA) {
+            printf("\nDownloaded Packet %u out of %u\n", (packetToDownload.seqn + 1), (packetToDownload.total_size + 1));
             fwrite(packetToDownload._payload,1,packetToDownload.length,fp);
         } else {
             printf("\nERROR expected Packet Type Data, Packet that came instead: %u\n", packetToDownload.type);
@@ -834,6 +840,26 @@ void mirrorUploadCommand(int sockfd, char *path, char *clientName){
     setPacket(&packetToDelete,TYPE_MIRROR_UPLOAD,0,0,0,fileName,clientName,"");
 
     serializePacket(&packetToDelete,serialized);
+
+    /* write in the socket */
+
+    status = write(sockfd, serialized, PACKET_SIZE);
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+}
+
+void inotifyConfirmation(int sockfd, char *path, char *clientName) {
+    char* fileName;
+    char serialized[PACKET_SIZE];
+    packet packetConfirmation;
+    int status;
+    //char response[PAYLOAD_SIZE];
+
+    fileName = getFileName(path);
+
+    setPacket(&packetConfirmation,TYPE_INOTIFY_CONFIRMATION,0,0,0,fileName,clientName,"");
+
+    serializePacket(&packetConfirmation,serialized);
 
     /* write in the socket */
 

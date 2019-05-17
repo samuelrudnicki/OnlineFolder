@@ -87,6 +87,9 @@ void *listener(void *socket){
                     clientSyncServer(connectionSocket, incomingPacket.clientName);
                     printf("\nAll Files Updated.\n");
                     break;
+                case TYPE_INOTIFY_CONFIRMATION:
+                    checkAndPost(&inotifySemaphore);
+                    break;
                 default:
                     break;
         }
@@ -212,7 +215,7 @@ void *inotifyWatcher(void *inotifyClient){
         int i = 0;
         inotifyInAction = FALSE;
 
-        checkAndPost(&inotifySemaphore);
+        //checkAndPost(&inotifySemaphore);
         length = read( fd, buffer, BUF_LEN );
 
         if ( length < 0 ) {
@@ -242,6 +245,7 @@ void *inotifyWatcher(void *inotifyClient){
                             else{
                                 printf("\nNão precisa ativar o Inotify\n");
                                 bzero(lastFile,FILENAME_SIZE);
+                                checkAndPost(&inotifySemaphore);
                             }
                         } else if (event->mask & IN_MOVED_TO) {
                         
@@ -254,6 +258,7 @@ void *inotifyWatcher(void *inotifyClient){
                             else{
                                 printf("\nNão precisa ativar o Inotify\n");
                                 bzero(lastFile,FILENAME_SIZE);
+                                checkAndPost(&inotifySemaphore);
                             }
                         }
                         else if ( event->mask & IN_DELETE || event->mask & IN_MOVED_FROM) {
@@ -266,6 +271,7 @@ void *inotifyWatcher(void *inotifyClient){
                             else{
                                 printf("\nNão precisa ativar o Inotify\n");
                                 bzero(lastFile,FILENAME_SIZE);
+                                checkAndPost(&inotifySemaphore);
                             }
                                 
                         }
