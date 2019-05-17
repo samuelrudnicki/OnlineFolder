@@ -137,7 +137,7 @@ void *handleConnection(void *socketDescriptor) {
                 if(findNode(userName, clientList, &client_node)){
                     otherSocket = otherSocketDevice(incomingPacket.clientName, newsockfd);
                     if(otherSocket != -1){
-                        deleteCommand(otherSocket,incomingPacket.fileName,incomingPacket.clientName);
+                        inotifyDelCommand(otherSocket,incomingPacket.fileName,incomingPacket.clientName);
                     }
                     else{
                         //nao tem outro device
