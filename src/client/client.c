@@ -71,6 +71,7 @@ void *listener(void *socket){
                         download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                         printf("\n%s Downloaded.\n", incomingPacket.fileName);
                     }
+                    bzero(lastFile,FILENAME_SIZE);
                     break;
                 case TYPE_DELETE:
                     printf("\nDeleting %s...\n", incomingPacket.fileName);
@@ -217,6 +218,7 @@ void *inotifyWatcher(void *inotifyClient){
     int fd;
     int wd;
     char buffer[BUF_LEN];
+    int semStatus;
 
 
    
@@ -233,6 +235,10 @@ void *inotifyWatcher(void *inotifyClient){
     while (1) {
         int i = 0;
         inotifyInAction = FALSE;
+        sem_getvalue(&writerSemaphore,&semStatus);
+        if (semStatus == 0) {
+            sem_post(&inotifySemaphore);
+        }
         length = read( fd, buffer, BUF_LEN );
 
         if ( length < 0 ) {
