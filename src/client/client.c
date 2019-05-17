@@ -70,10 +70,6 @@ void *listener(void *socket){
                     printf("\nDeleting %s...\n", incomingPacket.fileName);
                     delete(connectionSocket,incomingPacket.fileName, incomingPacket.clientName);   
                     break;
-                case TYPE_DELETE:
-                    printf("\nDeleting %s...\n", incomingPacket.fileName);
-                    delete(connectionSocket,incomingPacket.fileName, incomingPacket.clientName);                    
-                    break;
                 case TYPE_DOWNLOAD_READY:
                     printf("\nUploading %s...\n", incomingPacket.fileName);
                     upload(connectionSocket,clientPath,incomingPacket.clientName,FALSE);
@@ -210,7 +206,7 @@ void *inotifyWatcher(void *inotifyClient){
     }
 
     wd = inotify_add_watch( fd, ((struct inotyClient*) inotifyClient)->userName, 
-                            IN_CLOSE_WRITE | IN_DELETE | IN_MOVED_FROM);
+                            IN_CLOSE_WRITE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO);
 
     while (1) {
         int i = 0;
@@ -318,3 +314,24 @@ void semInit() {
     sem_init(&listenerSemaphore,0,0);
     sem_init(&writerSemaphore,0,0);
 }
+
+/*
+int CalcFileMD5(char *file_name, char *md5_sum) {
+    #define MD5SUM_CMD_FMT "md5sum %." STR(FILENAME_SIZE) "s 2>/dev/null"
+    char cmd[FILENAME_SIZE + sizeof(MD5SUM_CMD_FMT)];
+    sprintf(cmd, MD5SUM_CMD_FMT, file_name);
+    #undef MD5SUM_CMD_FMT
+
+    FILE *p = popen(cmd, "r");
+    if (p == NULL) return 0;
+
+    int i, ch;
+    for (i = 0; i < MD5_LEN && isxdigit(ch = fgetc(p)); i++) {
+        *md5_sum++ = ch;
+    }
+
+    *md5_sum = '\0';
+    pclose(p);
+    return i == MD5_LEN;
+}
+*/

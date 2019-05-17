@@ -149,11 +149,11 @@ void *handleConnection(void *socketDescriptor) {
                 break;
             case TYPE_DELETE:
                 delete(newsockfd,incomingPacket.fileName, pathServerUsers);
-                deleteCommand(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
+                inotifyDelCommand(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
                 if(findNode(userName, clientList, &client_node)){
                     otherSocket = otherSocketDevice(incomingPacket.clientName, newsockfd);
                     if(otherSocket != -1){
-                        deleteCommand(otherSocket,incomingPacket.fileName,incomingPacket.clientName);
+                        inotifyDelCommand(otherSocket,incomingPacket.fileName,incomingPacket.clientName);
                     }
                     else{
                         //nao tem outro device

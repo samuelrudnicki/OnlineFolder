@@ -16,6 +16,8 @@
 #include <semaphore.h>
 #include "../../include/common/common.h"
 
+//#define MD5_LEN 32
+
 extern pthread_mutex_t clientMutex;
 
 extern pthread_mutex_t writeListenMutex;

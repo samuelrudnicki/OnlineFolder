@@ -796,7 +796,7 @@ void inotifyDelCommand(int sockfd, char *path, char *clientName){
 
     fileName = getFileName(path);
 
-    setPacket(&packetToDelete,TYPE_DELETE,0,0,0,fileName,clientName,"");
+    setPacket(&packetToDelete,TYPE_INOTIFY_DELETE,0,0,0,fileName,clientName,"");
 
     serializePacket(&packetToDelete,serialized);
 
