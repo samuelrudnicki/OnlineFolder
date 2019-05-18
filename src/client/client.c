@@ -17,11 +17,6 @@
 #include "../../include/linkedlist/linkedlist.h"
 #include "../../include/client/client.h"
 
-int inotifyInAction = FALSE;
-
-sem_t inotifySemaphore;
-
-sem_t listenerSemaphore;
 
 pthread_mutex_t listenerInotifyMut = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t noListen = PTHREAD_COND_INITIALIZER, noInotify = PTHREAD_COND_INITIALIZER;
@@ -32,9 +27,7 @@ int inotifyLength = 0;
 int listenerStatus = 0;
 
 void *listener(void *socket){
-    //char command[PAYLOAD_SIZE];
     char response[PACKET_SIZE];
-    int status;
     int connectionSocket = *(int*)socket;
     packet incomingPacket;
     bzero(response, PACKET_SIZE);
@@ -55,7 +48,6 @@ void *listener(void *socket){
         //printf("PACKET: %u %u %u %u %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
         while(inotifyLength) {
             pthread_cond_wait(&noListen, &listenerInotifyMut);
-            //sem_wait(&listenerSemaphore);
         }
         listenerStatus = 0;
         pthread_mutex_lock(&clientMutex);
@@ -68,7 +60,7 @@ void *listener(void *socket){
                 case TYPE_MIRROR_UPLOAD:
                     strcpy(lastFile,incomingPacket.fileName);
                     downloadCommand(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,FALSE);
-                    status = read(connectionSocket, response, PACKET_SIZE);
+                    read(connectionSocket, response, PACKET_SIZE);
                     deserializePacket(&incomingPacket,response);
                     if(incomingPacket.type == TYPE_UPLOAD_READY){
                         printf("\nDownloading %s...\n", incomingPacket.fileName);
@@ -100,14 +92,12 @@ void *listener(void *socket){
                     break;
                 case TYPE_INOTIFY_CONFIRMATION:
                     pthread_cond_signal(&noInotify);
-                    //checkAndPost(&inotifySemaphore);
                     break;
                 default:
                     break;
         }
         pthread_mutex_unlock(&clientMutex);
         pthread_mutex_unlock(&writeListenMutex);
-        //checkAndPost(&inotifySemaphore);
         pthread_cond_signal(&noInotify);
         checkAndPost(&writerSemaphore);
         pthread_mutex_unlock(&listenerInotifyMut);
@@ -207,7 +197,6 @@ void deleteAll(char* clientName) {
 
 
 void *inotifyWatcher(void *inotifyClient){
-    int length;
     int fd;
     int wd;
     char buffer[BUF_LEN];
@@ -227,9 +216,7 @@ void *inotifyWatcher(void *inotifyClient){
 
     while (1) {
         int i = 0;
-        inotifyInAction = FALSE;
 
-        //checkAndPost(&inotifySemaphore);
         inotifyLength = 0;
         inotifyLength = read( fd, buffer, BUF_LEN );
         pthread_mutex_lock(&listenerInotifyMut);
@@ -241,11 +228,9 @@ void *inotifyWatcher(void *inotifyClient){
 
         if(!synching){   
             while ( i < inotifyLength ) {
-                inotifyInAction = TRUE;
                 while(listenerStatus) {
                     pthread_cond_wait(&noInotify, &listenerInotifyMut);
                 }
-                //sem_wait(&inotifySemaphore);
                 struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
                 if ( event->len ) {
                     if(event->name != NULL) {
@@ -264,7 +249,6 @@ void *inotifyWatcher(void *inotifyClient){
                             else{
                                 printf("\nNão precisa ativar o Inotify\n");
                                 bzero(lastFile,FILENAME_SIZE);
-                                //checkAndPost(&inotifySemaphore);
                             }
                         } else if (event->mask & IN_MOVED_TO) {
                         
@@ -277,7 +261,6 @@ void *inotifyWatcher(void *inotifyClient){
                             else{
                                 printf("\nNão precisa ativar o Inotify\n");
                                 bzero(lastFile,FILENAME_SIZE);
-                                //checkAndPost(&inotifySemaphore);
                             }
                         }
                         else if ( event->mask & IN_DELETE || event->mask & IN_MOVED_FROM) {
@@ -290,17 +273,14 @@ void *inotifyWatcher(void *inotifyClient){
                             else{
                                 printf("\nNão precisa ativar o Inotify\n");
                                 bzero(lastFile,FILENAME_SIZE);
-                                //checkAndPost(&inotifySemaphore);
                             }
                                 
                         }
                     } else {
-                        //checkAndPost(&inotifySemaphore);
                     }
                 }
                 i += EVENT_SIZE + event->len;
                 pthread_cond_signal(&noListen);
-                //checkAndPost(&listenerSemaphore);
             }
             
         }
@@ -336,28 +316,5 @@ void checkAndPost(sem_t *semaphore) {
 }
 
 void semInit() {
-    sem_init(&inotifySemaphore,0,1);
-    sem_init(&listenerSemaphore,0,0);
     sem_init(&writerSemaphore,0,0);
 }
-
-/*
-int CalcFileMD5(char *file_name, char *md5_sum) {
-    #define MD5SUM_CMD_FMT "md5sum %." STR(FILENAME_SIZE) "s 2>/dev/null"
-    char cmd[FILENAME_SIZE + sizeof(MD5SUM_CMD_FMT)];
-    sprintf(cmd, MD5SUM_CMD_FMT, file_name);
-    #undef MD5SUM_CMD_FMT
-
-    FILE *p = popen(cmd, "r");
-    if (p == NULL) return 0;
-
-    int i, ch;
-    for (i = 0; i < MD5_LEN && isxdigit(ch = fgetc(p)); i++) {
-        *md5_sum++ = ch;
-    }
-
-    *md5_sum = '\0';
-    pclose(p);
-    return i == MD5_LEN;
-}
-*/

@@ -233,6 +233,11 @@ void upload(int sockfd, char* path, char* clientName, int server) {
             printf("ERROR writing to socket\n");
             return;
         }
+        status = read(sockfd,okBuf,3);
+        if (status <= 0) {
+            printf("ERROR reading from socket\n");
+            return;
+        }
     } else {
         while ((nread = fread(buffer, 1, PAYLOAD_SIZE, fp)) > 0) {
             memset(serialized, '\0', sizeof(serialized));
