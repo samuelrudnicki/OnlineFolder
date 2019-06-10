@@ -26,15 +26,16 @@ int synching = FALSE;
 int inotifyLength = 0;
 int listenerStatus = 0;
 
-void *listener(void *socket){
+int serverSockfd;
+
+void *listener(){
     char response[PACKET_SIZE];
-    int connectionSocket = *(int*)socket;
     packet incomingPacket;
     bzero(response, PACKET_SIZE);
 
     while(1){
         
-        listenerStatus = read(connectionSocket, response, PACKET_SIZE);
+        listenerStatus = read(serverSockfd, response, PACKET_SIZE);
         
         deserializePacket(&incomingPacket,response);
         
@@ -54,40 +55,40 @@ void *listener(void *socket){
         switch(incomingPacket.type) {
                 case TYPE_UPLOAD:
                     printf("\nDownloading %s...\n", incomingPacket.fileName);
-                    download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                    download(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                     printf("\n%s Downloaded.\n", incomingPacket.fileName);
                     break;
                 case TYPE_MIRROR_UPLOAD:
                     strcpy(lastFile,incomingPacket.fileName);
-                    downloadCommand(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,FALSE);
-                    read(connectionSocket, response, PACKET_SIZE);
+                    downloadCommand(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                    read(serverSockfd, response, PACKET_SIZE);
                     deserializePacket(&incomingPacket,response);
                     if(incomingPacket.type == TYPE_UPLOAD_READY){
                         printf("\nDownloading %s...\n", incomingPacket.fileName);
-                        download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                        download(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                         printf("\n%s Downloaded.\n", incomingPacket.fileName);
                     }
                     break;
                 case TYPE_INOTIFY_DELETE:
                     strcpy(lastFile,incomingPacket.fileName);
                     printf("\nDeleting %s...\n", incomingPacket.fileName);
-                    delete(connectionSocket,incomingPacket.fileName, incomingPacket.clientName);   
+                    delete(serverSockfd,incomingPacket.fileName, incomingPacket.clientName);   
                     break;
                 case TYPE_DOWNLOAD_READY:
                     printf("\nUploading %s...\n", incomingPacket.fileName);
-                    upload(connectionSocket,clientPath,incomingPacket.clientName,FALSE);
+                    upload(serverSockfd,clientPath,incomingPacket.clientName,FALSE);
                     printf("\n%s Uploaded.\n", incomingPacket.fileName);
                     break;
                 case TYPE_UPLOAD_READY:
                     printf("\nDownloading %s...\n", incomingPacket.fileName);
-                    download(connectionSocket,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                    download(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
                     printf("\n%s Downloaded.\n", incomingPacket.fileName);
                     break;
                 case TYPE_LIST_SERVER_READY:
-                    clientListServer(connectionSocket);
+                    clientListServer(serverSockfd);
                     break;
                 case TYPE_GET_SYNC_DIR_READY:
-                    clientSyncServer(connectionSocket, incomingPacket.clientName);
+                    clientSyncServer(serverSockfd, incomingPacket.clientName);
                     printf("\nAll Files Updated.\n");
                     break;
                 case TYPE_INOTIFY_CONFIRMATION:
@@ -201,10 +202,6 @@ void *inotifyWatcher(void *inotifyClient){
     int wd;
     char buffer[BUF_LEN];
 
-
-
-   
-
     fd = inotify_init();
 
         if ( fd < 0 ) {
@@ -317,4 +314,141 @@ void checkAndPost(sem_t *semaphore) {
 
 void semInit() {
     sem_init(&writerSemaphore,0,0);
+}
+
+void connectToServer(char* serverIp, char* serverPort) {
+    struct hostent *server;
+    struct sockaddr_in serv_addr;
+    
+    server = gethostbyname(serverIp);
+
+	if (server == NULL) {
+        fprintf(stderr,"ERROR, no such host\n");
+        exit(-1);
+    }
+    
+    if ((serverSockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        printf("ERROR opening socket\n");
+        exit(-1);
+    }
+    
+	serv_addr.sin_family = AF_INET;     
+	serv_addr.sin_port = htons(atoi(serverPort));
+    serv_addr.sin_addr = *((struct in_addr *)server->h_addr_list[0]);
+	bzero(&(serv_addr.sin_zero), 8);
+
+    
+	if (connect(serverSockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+        printf("ERROR connecting\n");
+        exit(-1);
+    }
+
+}
+
+int authorization(char* userName) {
+    int authorization = WAITING;
+    char buffer[PAYLOAD_SIZE] = {0};
+    int idUserName;
+    char response[PAYLOAD_SIZE] = {0};
+
+    sprintf(buffer,"%s",userName);
+    idUserName = write(serverSockfd, buffer, PAYLOAD_SIZE);
+    // envia o username para o servidor
+    if (idUserName < 0) 
+        printf("ERROR writing to socket\n");
+    /*
+    Espera autorização do servidor para validar a conexão
+    */
+    while(authorization == WAITING) {
+        read(serverSockfd, response, PAYLOAD_SIZE);
+        if(strcmp(response,"authorized") == 0){
+            authorization = TRUE;
+        } else if(strcmp(response,"notauthorized") == 0) {
+            printf("There is a connection limit of up to two connected devices.\n");
+            authorization = FALSE;
+            exitCommand = TRUE;
+        }
+    }
+    return authorization;    
+}
+
+void writer(char* userName) {
+    char command[PAYLOAD_SIZE] = {0};
+    char *option;
+    char *path;
+    char *fileName;
+    int error;
+
+    printf("\nConsole Started, you can now enter commands.\n");
+
+    while (exitCommand == FALSE) {
+
+        bzero(command, PAYLOAD_SIZE);
+        fflush(stdin);
+        fgets(command, PAYLOAD_SIZE, stdin);
+        if(strcspn(command, "\n")>0)
+            command[strcspn(command, "\n")] = 0;
+
+        option = strtok(command," ");
+        path = strtok(NULL," ");
+        if(path != NULL) {
+            path = strtok(path,"\n");
+        }
+
+        printf("OPTION: %s\n", option);
+        printf("PATH: %s\n", path);
+
+        // Stores clientPath for listener
+        if(path != NULL) {
+            sprintf(clientPath,"%s",path);
+        }
+        
+        pthread_mutex_lock(&clientMutex);
+        pthread_mutex_lock(&writeListenMutex);
+
+        // Switch for options
+        if(strcmp(option,"exit") == 0) {
+            exitCommand = TRUE;
+            error = ERRORCODE;
+        } else if (strcmp(option, "upload") == 0) { // upload from path
+            fileName = strrchr(path,'/');
+            if(fileName != NULL){
+                fileName++;
+            } 
+            else {
+                fileName = path;
+            }
+            strcpy(lastFile, fileName);
+            error = uploadCommand(serverSockfd,path,userName, FALSE);          
+        } else if (strcmp(option, "download") == 0) { // download to exec folder
+            error = downloadCommand(serverSockfd,path,userName, FALSE);
+        } else if (strcmp(option, "delete") == 0) { // delete from syncd dir
+            fileName = strrchr(path,'/');
+            if(fileName != NULL){
+                fileName++;
+            } 
+            else {
+                fileName = path;
+            }
+            strcpy(lastFile, fileName);
+            error = deleteCommand(serverSockfd,path,userName);
+        } else if (strcmp(option, "list_server") == 0) { // list user's saved files on dir
+            error = list_serverCommand(serverSockfd,userName);
+        } else if (strcmp(option, "list_client") == 0) { // list saved files on dir
+            error = list_clientCommand(serverSockfd,userName);
+        } else if (strcmp(option, "get_sync_dir") == 0) { // creates sync_dir_<username> and syncs
+            error = checkAndCreateDir(userName);
+            error = getSyncDirCommand(serverSockfd,userName);            
+        } else {
+            printf("\nInvalid Command.\n");
+            error = ERRORCODE;
+        }
+        pthread_mutex_unlock(&clientMutex);
+        if((strcmp(option, "list_client") != 0 && error != ERRORCODE)){
+            sem_wait(&writerSemaphore);
+        }else{
+            pthread_mutex_unlock(&writeListenMutex);
+        }
+
+    }
 }

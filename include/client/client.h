@@ -16,8 +16,6 @@
 #include <semaphore.h>
 #include "../../include/common/common.h"
 
-//#define MD5_LEN 32
-
 extern pthread_mutex_t clientMutex;
 
 extern pthread_mutex_t writeListenMutex;
@@ -26,16 +24,21 @@ extern sem_t inotifySemaphore;
 
 extern sem_t writerSemaphore;
 
+extern int serverSockfd;
+
+extern int exitCommand;
+
 struct inotyClient{
   char userName[64];
   int socket;
 };
 
+
 char lastFile[FILENAME_SIZE];
 /*
   Listener do cliente que recebe todos os pacotes que inicializam uma operação com o servidor e decide o que fazer de acordo com o pacote
 */
-void *listener(void *socket);
+void *listener();
 
 /*
   Faz a sincronização inicial do servidor
@@ -68,5 +71,19 @@ void checkAndPost(sem_t *semaphore);
  Inicializa Semaforos
 */
 void semInit();
+
+/*
+  Se conecta ao servidor, modifica o socket global serverSockfd
+*/
+void connectToServer(char* serverIp, char* serverPort);
+/*
+  Verifica se está autorizado a conectar no servidor
+ */
+int authorization(char* userName);
+
+/*
+ Escreve comandos e envia ao servidor
+*/
+void writer(char* userName);
 
 #endif
