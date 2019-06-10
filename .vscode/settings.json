@@ -5,6 +5,7 @@
         "types.h": "c",
         "socket.h": "c",
         "common.h": "c",
-        "linkedlist.h": "c"
+        "linkedlist.h": "c",
+        "client.h": "c"
     },
 }

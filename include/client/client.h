@@ -16,6 +16,10 @@
 #include <semaphore.h>
 #include "../../include/common/common.h"
 
+#define SERVER_IP_SIZE 64
+#define SERVER_PORT_SIZE 12
+
+
 extern pthread_mutex_t clientMutex;
 
 extern pthread_mutex_t writeListenMutex;
@@ -90,5 +94,10 @@ void *writer(void* name);
   FrontEnd do cliente
 */
 void frontEnd(char* userName, char* serverIp, char* serverPort);
+
+/*
+  Abre a porta 4070 do cliente para o envio de mensagem de um novo servidor primario, e recebe o IP e porta do novo primário por meio de reads
+*/
+void *serverReconnection();
 
 #endif

@@ -28,6 +28,12 @@ int listenerStatus = 0;
 
 int serverSockfd;
 
+char newServerIp[SERVER_IP_SIZE];
+
+char newServerPort[SERVER_PORT_SIZE];
+
+sem_t reconnectionSemaphore;
+
 void *listener(){
     char response[PACKET_SIZE];
     packet incomingPacket;
@@ -41,8 +47,7 @@ void *listener(){
         
 
         if(listenerStatus == 0) {
-            printf("\nConnection Closed.\n");
-            exit(-1);
+            return NULL;
         }
         
         pthread_mutex_lock(&listenerInotifyMut);
@@ -240,7 +245,7 @@ void *inotifyWatcher(void *inotifyClient){
                             if(strcmp(event->name,lastFile)!=0){
                                 //cria o caminho: username/file
                                 printf( "\nThe file %s was created in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
-                                inotifyUpCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);
+                                inotifyUpCommand(serverSockfd, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);
                                 bzero(lastFile,FILENAME_SIZE);      
                             }
                             else{
@@ -252,7 +257,7 @@ void *inotifyWatcher(void *inotifyClient){
                             if(strcmp(event->name,lastFile)!=0){
                                 //cria o caminho: username/file
                                 printf( "\nThe file %s was created in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
-                                inotifyUpCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);
+                                inotifyUpCommand(serverSockfd, event->name, ((struct inotyClient*) inotifyClient)->userName, TRUE);
                                 bzero(lastFile,FILENAME_SIZE);      
                             }
                             else{
@@ -264,7 +269,7 @@ void *inotifyWatcher(void *inotifyClient){
                             if(strcmp(event->name,lastFile)!=0){
                                 //cria o caminho: username/file
                                 printf( "\nThe file %s was deleted in %s.\n", event->name,((struct inotyClient*) inotifyClient)->userName);
-                                inotifyDelCommand(((struct inotyClient*) inotifyClient)->socket, event->name, ((struct inotyClient*) inotifyClient)->userName);
+                                inotifyDelCommand(serverSockfd, event->name, ((struct inotyClient*) inotifyClient)->userName);
                                 bzero(lastFile,FILENAME_SIZE);
                             }
                             else{
@@ -314,6 +319,7 @@ void checkAndPost(sem_t *semaphore) {
 
 void semInit() {
     sem_init(&writerSemaphore,0,0);
+    sem_init(&reconnectionSemaphore,0,0);
 }
 
 void connectToServer(char* serverIp, char* serverPort) {
@@ -383,7 +389,7 @@ void *writer(void* name) {
 
     printf("\nConsole Started, you can now enter commands.\n");
 
-    while (exitCommand == FALSE) {
+    while(exitCommand == FALSE) {
 
         bzero(command, PAYLOAD_SIZE);
         fflush(stdin);
@@ -411,7 +417,8 @@ void *writer(void* name) {
         // Switch for options
         if(strcmp(option,"exit") == 0) {
             exitCommand = TRUE;
-            error = ERRORCODE;
+            close(serverSockfd);
+            exit(0);
         } else if (strcmp(option, "upload") == 0) { // upload from path
             fileName = strrchr(path,'/');
             if(fileName != NULL){
@@ -459,40 +466,140 @@ void *writer(void* name) {
 
 void frontEnd(char* userName, char* serverIp, char* serverPort) {
     int initialization = 1;
-    pthread_t thread_inotify, thread_listener, thread_writer;
+    pthread_t thread_inotify, thread_listener, thread_writer, thread_reconnection;
     struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
 
-    if(initialization){
-        connectToServer(serverIp,serverPort);
-        initialization = 0;
-    } else {
+    while(exitCommand == FALSE){
+        if(initialization){
+            connectToServer(serverIp,serverPort);
+            if(authorization(userName) == TRUE) {
+                inotyClient->socket = serverSockfd;
+                strcpy(inotyClient->userName, userName);
+                if(pthread_create(&thread_reconnection, NULL, serverReconnection, NULL) < 0){ // Server reconnection
+                    fprintf(stderr,"ERROR, could not create listener thread.\n");
+                    exit(-1);
+                }
+                checkAndCreateDir(userName);
+                deleteAll(userName);
+                synchronize(serverSockfd,userName);
+                
+                if(pthread_create(&thread_inotify, NULL, inotifyWatcher, (void *) inotyClient) < 0){ // Inotify
+                    fprintf(stderr,"ERROR, could not create inotify thread.\n");
+                    exit(-1);
+                }
+                if(pthread_create(&thread_listener, NULL, listener, NULL) < 0){ // Updates from server
+                    fprintf(stderr,"ERROR, could not create listener thread.\n");
+                    exit(-1);
+                }
+                if(pthread_create(&thread_writer, NULL, writer, (void *) userName) < 0){ // Inotify
+                    fprintf(stderr,"ERROR, could not create writer thread.\n");
+                    exit(-1);
+                }
 
+                initialization = 0;
+            }
+        } else {
+            sem_wait(&reconnectionSemaphore);
+            close(serverSockfd);
+            connectToServer(newServerIp,newServerPort);
+            if(authorization(userName) == TRUE) {
+                if(pthread_create(&thread_listener, NULL, listener, NULL) < 0){ // Updates from server
+                    fprintf(stderr,"ERROR, could not create listener thread.\n");
+                    exit(-1);
+                }
+            }
+        }
+
+        pthread_join(thread_listener,NULL);
+        // Se o listener fechar, server respondeu com zero no TCP
+        printf("Server failure, waiting for new primary server.\n");
     }
 
-    if(authorization(userName) == TRUE) {
-        inotyClient->socket = serverSockfd;
-        strcpy(inotyClient->userName, userName);
-        checkAndCreateDir(userName);
-        deleteAll(userName);
-        synchronize(serverSockfd,userName);
+    close(serverSockfd);
+
+}
+
+void *serverReconnection() {
+    int semStatus;
+    int status;
+    char buffer[PACKET_SIZE] = {0};
+    int sockfd;
+	printf("Opening Server Reconnection Socket...\n");
+    socklen_t clilen;
+	struct sockaddr_in serv_addr, cli_addr;
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		fprintf(stderr,"ERROR opening socket.\n");
+		exit(-1);
+	}
+	
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(RECONNECTION_PORT);
+	serv_addr.sin_addr.s_addr = INADDR_ANY;
+	bzero(&(serv_addr.sin_zero), 8);
+
+	printf("Binding Server Reconnection Socket...\n");
+
+	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+		fprintf(stderr,"ERROR on binding Reconnection Socket.\n");
+		exit(-1);
+	}
+	
+	listen(sockfd, 5);
+
+    clilen = sizeof(struct sockaddr_in);
+
+	printf("Listening for new Servers.\n");
+
+	while ((sockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
+		printf("New Potential Server Connection Accepted\n");
+
+        status = read(sockfd, buffer, PACKET_SIZE);
+
+        if (status < 0) {
+            printf("ERROR reading from socket\n");
+            continue;
+        }
+        strncpy(newServerIp,buffer,SERVER_IP_SIZE);
+
+        bzero(buffer,PACKET_SIZE);
+        strcpy(buffer,"OK");
+
+        status = write(sockfd,buffer,PACKET_SIZE);
+
+        if (status < 0) {
+            printf("ERROR writing to socket\n");
+            continue;
+        }
+
+        bzero(buffer,PACKET_SIZE);
+        status = read(sockfd, buffer, PACKET_SIZE);
+
+        if (status < 0) {
+            printf("ERROR reading from socket\n");
+            continue;
+        }
+        strncpy(newServerPort,buffer,SERVER_PORT_SIZE);
+
+        bzero(buffer,PACKET_SIZE);
+        strcpy(buffer,"OK");
+
+
+        status = write(sockfd,buffer,PACKET_SIZE);
+
+        if (status < 0) {
+            printf("ERROR writing to socket\n");
+            continue;
+        }
         
-        if(pthread_create(&thread_inotify, NULL, inotifyWatcher, (void *) inotyClient) < 0){ // Inotify
-            fprintf(stderr,"ERROR, could not create inotify thread.\n");
-            exit(-1);
-        }
-        if(pthread_create(&thread_listener, NULL, listener, NULL) < 0){ // Updates from server
-            fprintf(stderr,"ERROR, could not create listener thread.\n");
-            exit(-1);
-        }
-        if(pthread_create(&thread_writer, NULL, writer, (void *) userName) < 0){ // Inotify
-            fprintf(stderr,"ERROR, could not create inotify thread.\n");
-            exit(-1);
-        }
+        sem_getvalue(&reconnectionSemaphore,&semStatus);
 
-        pthread_join(thread_writer,NULL);
-
-    }
-    
-
+        if(semStatus == 0) {
+            sem_post(&reconnectionSemaphore);
+        }
+	}
+		
+	close(sockfd);
+    return NULL;
 }
 
