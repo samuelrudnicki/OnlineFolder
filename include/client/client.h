@@ -84,6 +84,11 @@ int authorization(char* userName);
 /*
  Escreve comandos e envia ao servidor
 */
-void writer(char* userName);
+void *writer(void* name);
+
+/*
+  FrontEnd do cliente
+*/
+void frontEnd(char* userName, char* serverIp, char* serverPort);
 
 #endif

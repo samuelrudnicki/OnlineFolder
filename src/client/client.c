@@ -349,7 +349,7 @@ int authorization(char* userName) {
     int authorization = WAITING;
     char buffer[PAYLOAD_SIZE] = {0};
     int idUserName;
-    char response[PAYLOAD_SIZE] = {0};
+    char response[PACKET_SIZE] = {0};
 
     sprintf(buffer,"%s",userName);
     idUserName = write(serverSockfd, buffer, PAYLOAD_SIZE);
@@ -360,7 +360,7 @@ int authorization(char* userName) {
     Espera autorização do servidor para validar a conexão
     */
     while(authorization == WAITING) {
-        read(serverSockfd, response, PAYLOAD_SIZE);
+        read(serverSockfd, response, PACKET_SIZE);
         if(strcmp(response,"authorized") == 0){
             authorization = TRUE;
         } else if(strcmp(response,"notauthorized") == 0) {
@@ -372,12 +372,14 @@ int authorization(char* userName) {
     return authorization;    
 }
 
-void writer(char* userName) {
+void *writer(void* name) {
     char command[PAYLOAD_SIZE] = {0};
     char *option;
     char *path;
     char *fileName;
     int error;
+    char *userName = (char*)name;
+
 
     printf("\nConsole Started, you can now enter commands.\n");
 
@@ -451,4 +453,46 @@ void writer(char* userName) {
         }
 
     }
+    return NULL;
 }
+
+
+void frontEnd(char* userName, char* serverIp, char* serverPort) {
+    int initialization = 1;
+    pthread_t thread_inotify, thread_listener, thread_writer;
+    struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
+
+    if(initialization){
+        connectToServer(serverIp,serverPort);
+        initialization = 0;
+    } else {
+
+    }
+
+    if(authorization(userName) == TRUE) {
+        inotyClient->socket = serverSockfd;
+        strcpy(inotyClient->userName, userName);
+        checkAndCreateDir(userName);
+        deleteAll(userName);
+        synchronize(serverSockfd,userName);
+        
+        if(pthread_create(&thread_inotify, NULL, inotifyWatcher, (void *) inotyClient) < 0){ // Inotify
+            fprintf(stderr,"ERROR, could not create inotify thread.\n");
+            exit(-1);
+        }
+        if(pthread_create(&thread_listener, NULL, listener, NULL) < 0){ // Updates from server
+            fprintf(stderr,"ERROR, could not create listener thread.\n");
+            exit(-1);
+        }
+        if(pthread_create(&thread_writer, NULL, writer, (void *) userName) < 0){ // Inotify
+            fprintf(stderr,"ERROR, could not create inotify thread.\n");
+            exit(-1);
+        }
+
+        pthread_join(thread_writer,NULL);
+
+    }
+    
+
+}
+
