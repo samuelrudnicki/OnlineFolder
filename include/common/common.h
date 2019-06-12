@@ -57,6 +57,8 @@
 
 #define TYPE_INOTIFY 70
 
+#define TYPE_INOTIFY_CONFIRMATION 72
+
 #define TYPE_INOTIFY_DELETE 75
 
 #define PACKET_SIZE (sizeof (struct packet))
@@ -64,7 +66,7 @@
 
 typedef struct packet {
     uint16_t type; // Tipo do pacote ( DATA | CMD )
-    uint16_t seqn; // Numero de sequencia
+    uint32_t seqn; // Numero de sequencia
     uint16_t length; // Comprimento do payload
     uint32_t total_size; // Numero total de fragmentos
     char clientName[CLIENT_NAME_SIZE];
@@ -198,6 +200,10 @@ void inotifyDelCommand(int sockfd, char *path, char *clientName);
  Espelha um upload
 */
 void mirrorUploadCommand(int sockfd, char *path, char *clientName);
+/*
+  Confirma que o servidor fez a ação do inotify
+*/
+void inotifyConfirmation(int sockfd, char *path, char *clientName);
 
 
 #endif
