@@ -83,3 +83,18 @@ int findNode(char *userid, struct clientList *clientList, struct clientList **cl
 	}
 	return 0;
 }
+
+int isPrimary(char *serverName, struct serverList *serverList){
+
+	struct serverList *pointer = serverList;
+
+	while(pointer != NULL){
+		if(strcmp(serverName, pointer->serverName) == 0)
+			return pointer->isPrimary;
+		else
+		{
+			pointer = pointer->next;
+		}
+	}
+	return 0;
+}

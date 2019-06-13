@@ -15,7 +15,7 @@
 
 int main(int argc, char *argv[])
 {
-	int sockfd, newsockfd;
+	int sockfd, newsockfd, sock_server_connect;
 	socklen_t clilen;
 	pthread_t thread_id;
 	struct sockaddr_in serv_addr, cli_addr;
@@ -41,7 +41,6 @@ int main(int argc, char *argv[])
 	// copia arquivo no buffer
   	buffer=(char*)malloc(sizeof(char)*lSize);	
   	fread(buffer,1,lSize,fp);
-	//fprintf(stderr,"%s", buffer);
 	if(strcspn(buffer, "\n")>0)
         buffer[strcspn(buffer, "\n")] = 0;
 	// le tokens e adiciona a lista
@@ -50,15 +49,14 @@ int main(int argc, char *argv[])
 		insertServerList(&serverList,token);
 		token = strtok(NULL,";");
 	}
-	// imprime lista de servidores (teste)
+	/*imprime lista de servidores (teste)
 	struct serverList *pointer = serverList;
 		while(pointer != NULL){
 		fprintf(stderr,"%s - isPrimary:%d\n", pointer->serverName, pointer->isPrimary);
 		pointer=pointer->next;
 	}
+	*/ 
 	
-	
-
 	printf("Opening Socket...\n");
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -71,6 +69,17 @@ int main(int argc, char *argv[])
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(serv_addr.sin_zero), 8);
 
+	//socket conexao servidores
+	if ((sock_server_connect = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		fprintf(stderr,"ERROR opening socket.\n");
+		exit(-1);
+	}
+	
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(CONNECTPORT);
+	serv_addr.sin_addr.s_addr = INADDR_ANY;
+	bzero(&(serv_addr.sin_zero), 8);
+
 	printf("Binding Socket...\n");
 
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
@@ -79,10 +88,23 @@ int main(int argc, char *argv[])
 	}
 	
 	listen(sockfd, 5);
+
+	//binding conexao servidores	
+	if (bind(sock_server_connect, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+		fprintf(stderr,"ERROR on binding.\n");
+		exit(-1);
+	}
+	
+	listen(sock_server_connect, 5);
 	
 	clilen = sizeof(struct sockaddr_in);
 
 	printf("Accepting new connections...\n");
+
+	if(pthread_create(&thread_id, NULL, acceptServer, (void*)&sock_server_connect) < 0){
+		fprintf(stderr,"ERROR, could not create thread.\n");
+		exit(-1);
+	}
 
 	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
 		printf("Connection Accepted\n");
@@ -97,5 +119,30 @@ int main(int argc, char *argv[])
 	}
 		
 	close(sockfd);
+	close(sock_server_connect);
 	return 0; 
 }
+
+void acceptServer(void *socketDescriptor){
+
+	struct sockaddr_in cli_addr;
+	socklen_t clilen;
+	
+	clilen=sizeof(struct sockaddr_in);
+
+	int newsock_server_connect;
+	while ((newsock_server_connect = accept(socketDescriptor, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
+		printf("Connection Accepted\n");
+
+		/* TODO: TRATAR CONEXAO
+		if(pthread_create(&thread_id, NULL, handleConnection, (void*)&newsock_server_connect) < 0){
+			fprintf(stderr,"ERROR, could not create thread.\n");
+			exit(-1);
+		}
+		*/
+
+		printf("Handler Assigned\n");
+
+	}
+}
+

@@ -872,6 +872,85 @@ void inotifyConfirmation(int sockfd, char *path, char *clientName) {
     if (status < 0) 
         printf("ERROR writing to socket\n");
 }
+/*
+ * Find local ip used as source ip in ip packets.
+ * Read the /proc/net/route file
+ */
 
+#include&lt;stdio.h&gt;	//printf
+#include&lt;string.h&gt;	//memset
+#include&lt;errno.h&gt;	//errno
+#include&lt;sys/socket.h&gt;
+#include&lt;netdb.h&gt;
+#include&lt;ifaddrs.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;unistd.h&gt;
+
+char *gethostname()
+{
+    FILE *f;
+    char line[100] , *p , *c;
+    
+    f = fopen("/proc/net/route" , "r");
+    
+    while(fgets(line , 100 , f))
+    {
+		p = strtok(line ," \t");
+		c = strtok(NULL ," \t");
+		
+		if(p!=NULL &amp;&amp; c!=NULL)
+		{
+			if(strcmp(c , &quot;00000000&quot;) == 0)
+			{
+				printf(&quot;Default interface is : %s \n&quot; , p);
+				break;
+			}
+		}
+	}
+    
+    //which family do we require , AF_INET or AF_INET6
+    int fm = AF_INET;
+    struct ifaddrs *ifaddr, *ifa;
+	int family , s;
+	char host[NI_MAXHOST];
+
+	if (getifaddrs(&amp;ifaddr) == -1) 
+	{
+		perror(&quot;getifaddrs&quot;);
+		exit(EXIT_FAILURE);
+	}
+
+	//Walk through linked list, maintaining head pointer so we can free list later
+	for (ifa = ifaddr; ifa != NULL; ifa = ifa-&gt;ifa_next) 
+	{
+		if (ifa-&gt;ifa_addr == NULL)
+		{
+			continue;
+		}
+
+		family = ifa-&gt;ifa_addr-&gt;sa_family;
+
+		if(strcmp( ifa-&gt;ifa_name , p) == 0)
+		{
+			if (family == fm) 
+			{
+				s = getnameinfo( ifa-&gt;ifa_addr, (family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6) , host , NI_MAXHOST , NULL , 0 , NI_NUMERICHOST);
+				
+				if (s != 0) 
+				{
+					printf(&quot;getnameinfo() failed: %s\n&quot;, gai_strerror(s));
+					exit(EXIT_FAILURE);
+				}
+				
+				printf(&quot;address: %s&quot;, host);
+			}
+			printf(&quot;\n&quot;);
+		}
+	}
+
+	freeifaddrs(ifaddr);
+	
+	return 0;
+}
 
 
