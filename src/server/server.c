@@ -17,11 +17,13 @@
 
 void *handleConnection(void *socketDescriptor) {
     packet incomingPacket;
-    char buffer[PACKET_SIZE];
+    char buffer[PACKET_SIZE] = {0};
+    char clientIp[PACKET_SIZE] = {0};
     int exitCommand = FALSE;
     int n;
     int newsockfd = *(int*)socketDescriptor;
     int idUserName;
+    int idClientIp;
     char *userName = malloc(sizeof(userName));
     char pathServerUsers[CLIENT_NAME_SIZE] = "";
     char auth[PACKET_SIZE] = {0};
@@ -36,19 +38,24 @@ void *handleConnection(void *socketDescriptor) {
     idUserName = read(newsockfd,buffer,PAYLOAD_SIZE);
     if(idUserName < 0)
         printf("ERROR reading from socket");
+
+    idClientIp = read(newsockfd,clientIp,PAYLOAD_SIZE);
+    if(idClientIp < 0)
+        printf("ERROR reading IP from socket");
+
     strcpy(userName , buffer);
     strcat(pathServerUsers,buffer);
 
     struct clientList *client_node = malloc(sizeof(*client_node));//node used to find the username on the list.
 
     if (!findNode(buffer, clientList, &client_node)){
-        appendNewClient(newsockfd, buffer);
+        appendNewClient(newsockfd, buffer, clientIp);
         checkAndCreateDir(pathServerUsers);
         sprintf(auth,"%s","authorized");
         write(newsockfd, auth, PACKET_SIZE);
     }
     else {
-        if(!(updateNumberOfDevices(client_node, newsockfd, INSERTDEVICE) == SUCESS)){
+        if(!(updateNumberOfDevices(client_node, newsockfd, INSERTDEVICE, clientIp) == SUCESS)){
             exitCommand = TRUE;
             printf("There is a connection limit of up to two connected devices.Will close this client device.\n");
             sprintf(auth,"%s","notauthorized");
@@ -73,7 +80,7 @@ void *handleConnection(void *socketDescriptor) {
         if(n == 0) {
             printf("Empty response, closing\n");
             if(findNode(userName, clientList, &client_node)){
-                if(updateNumberOfDevices(client_node, newsockfd, REMOVEDEVICE)== SUCESS){
+                if(updateNumberOfDevices(client_node, newsockfd, REMOVEDEVICE, "whatever")== SUCESS){
                     exitCommand = TRUE;
                 }
                 else{
@@ -180,7 +187,7 @@ void *handleConnection(void *socketDescriptor) {
             case TYPE_EXIT:
                 printf("Exit command, closing connection\n");
                 if(findNode(userName, clientList, &client_node)){
-                    if(updateNumberOfDevices(client_node, newsockfd, REMOVEDEVICE) == SUCESS){
+                    if(updateNumberOfDevices(client_node, newsockfd, REMOVEDEVICE, "whatever") == SUCESS){
                         exitCommand = TRUE;
                     }
                     else{
@@ -205,32 +212,31 @@ void *handleConnection(void *socketDescriptor) {
     return 0;
 }
 
-void appendNewClient(int socketNewClient, char* userName) {
+void appendNewClient(int socketNewClient, char* userName, char* clientIp) {
     struct client *newClient = malloc(sizeof(*newClient));
     newClient->devices[0] = socketNewClient;
     newClient->devices[1] = -1;
     strcpy(newClient->userName , userName);
+    strcpy(newClient->ip[0], clientIp);
+    bzero(newClient->ip[1], 100);
     pthread_mutex_init(&(newClient->clientPairMutex), NULL);
     insertList(&clientList,*newClient);
 }
 
-int updateNumberOfDevices(struct clientList *client_node, int socketNumber, int option){
+int updateNumberOfDevices(struct clientList *client_node, int socketNumber, int option, char* clientIp){
     if(option == INSERTDEVICE){
         if(client_node->client.devices[0] == FREEDEV)
         {
+            strcpy(client_node->client.ip[0], clientIp);
             client_node->client.devices[0] = socketNumber;
             return 1;
         }
         else if (client_node->client.devices[1] == FREEDEV)
         {
             client_node->client.devices[1] = socketNumber;
+            strcpy(client_node->client.ip[1], clientIp);
             return 1;
         }
-        /*TODO: Avisar o client de que a conexão foi finalizada.
-          "There is a connection limit of up to two connected devices.""
-          Acho que vamos precisar fazer uma thread no client que fica só lendo resposta dos servidor,
-          pq se não ele fica presso naquele printf "Enter command"..
-        */
         else{ //all devices are busy
             return 0;
         }
@@ -240,6 +246,7 @@ int updateNumberOfDevices(struct clientList *client_node, int socketNumber, int 
         for(int device = 0; device <= 1; device++){
             if(client_node->client.devices[device] == socketNumber){
                 client_node->client.devices[device] = FREEDEV;
+                bzero(client_node->client.ip[device], 100);
             }
         }
         return 1;
