@@ -20,8 +20,42 @@ int main(int argc, char *argv[])
 	pthread_t thread_id;
 	struct sockaddr_in serv_addr, cli_addr;
 	
-	createList(clientList);//Criando a lista
+	//Criando a listas
+	createList(clientList);
+	createServerList(serverList);
 
+	// LENDO ARQUIVO .TXT E CRIANDO LISTA
+	FILE *fp;
+	long lSize;
+	char *buffer;
+	char *token;
+	fp=fopen("server_list.txt","r");
+	if(fp==NULL){
+		printf("\nFile Error\n");
+		exit(-1);
+	}
+	// obtem tamanho do arquivo
+  	fseek(fp,0,SEEK_END);
+ 	lSize=ftell(fp);
+  	rewind(fp);
+	// copia arquivo no buffer
+  	buffer=(char*)malloc(sizeof(char)*lSize);	
+  	fread(buffer,1,lSize,fp);
+	if(strcspn(buffer, "\n")>0)
+        buffer[strcspn(buffer, "\n")] = 0;
+	// le tokens e adiciona a lista
+	token = strtok(buffer,";");
+	while(token != NULL && strcmp(token,"")!=0){
+		insertServerList(&serverList,token);
+		token = strtok(NULL,";");
+	}
+	/* //imprime lista de servidores (teste)
+	struct serverList *pointer = serverList;
+		while(pointer != NULL){
+		fprintf(stderr,"%s - isPrimary:%d\n", pointer->serverName, pointer->isPrimary);
+		pointer=pointer->next;
+	}
+	*/
 	printf("Opening Socket...\n");
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
