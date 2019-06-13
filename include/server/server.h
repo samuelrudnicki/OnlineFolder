@@ -24,12 +24,12 @@ void *handleConnection(void *socketDescriptor);
 /*
   Adiciona um novo cliente na lista de clientes
 */
-void appendNewClient(int socketNewClient, char* userName);
+void appendNewClient(int socketNewClient, char* userName, char* clientIp);
 /*
   Atualiza o numero de devices de um cliente na lista.
   colocar em option INSERTDEVICE(0) para inserir e REMOVE DEVICE(1) para remover
 */
-int updateNumberOfDevices(struct clientList *client_node, int socketNumber, int option);
+int updateNumberOfDevices(struct clientList *client_node, int socketNumber, int option, char* clientIp);
 
 /*
   Procura um segundo socket associado a um cliente
@@ -40,6 +40,7 @@ struct client
 {
   int devices[2];
   char userName[MAXNAME];
+  char ip[2][100];
   pthread_mutex_t clientPairMutex;
 };
 

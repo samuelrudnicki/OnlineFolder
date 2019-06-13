@@ -18,6 +18,7 @@
 
 #define SERVER_IP_SIZE 64
 #define SERVER_PORT_SIZE 12
+#define WANTED_IP "wlx54e6fc8fe2f1"
 
 
 extern pthread_mutex_t clientMutex;
@@ -99,5 +100,10 @@ void frontEnd(char* userName, char* serverIp, char* serverPort);
   Abre a porta 4070 do cliente para o envio de mensagem de um novo servidor primario, e recebe o IP e porta do novo primário por meio de reads
 */
 void *serverReconnection();
+
+/*
+  Retorna no buffer 'ip' o IP desejado ("eth0"....).
+*/
+void myIp(char* wantedIP, char* ip);
 
 #endif

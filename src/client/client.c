@@ -13,6 +13,11 @@
 #include <errno.h>
 #include <sys/inotify.h>
 #include <dirent.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
 
 #include "../../include/linkedlist/linkedlist.h"
 #include "../../include/client/client.h"
@@ -355,13 +360,23 @@ int authorization(char* userName) {
     int authorization = WAITING;
     char buffer[PAYLOAD_SIZE] = {0};
     int idUserName;
+    int idIp;
     char response[PACKET_SIZE] = {0};
+    char ip[PAYLOAD_SIZE] = {0};
 
     sprintf(buffer,"%s",userName);
+    myIp(WANTED_IP, ip);
+
     idUserName = write(serverSockfd, buffer, PAYLOAD_SIZE);
     // envia o username para o servidor
     if (idUserName < 0) 
         printf("ERROR writing to socket\n");
+
+    //envia o IP para o servidor    
+    idIp = write(serverSockfd,ip, PAYLOAD_SIZE);
+    if(idIp < 0)
+        printf("ERROR writing IP to socket\n");
+
     /*
     Espera autorização do servidor para validar a conexão
     */
@@ -601,5 +616,24 @@ void *serverReconnection() {
 		
 	close(sockfd);
     return NULL;
+}
+
+void myIp(char* wantedIP, char* ip){
+    int fd;
+    struct ifreq ifr;
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    /* I want to get an IPv4 IP address */
+    ifr.ifr_addr.sa_family = AF_INET;
+
+    /* I want IP address attached to "eth0" */
+    strncpy(ifr.ifr_name, wantedIP, IFNAMSIZ-1);
+
+    ioctl(fd, SIOCGIFADDR, &ifr);
+
+    close(fd);
+
+    strcpy(ip, inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr) );
 }
 
