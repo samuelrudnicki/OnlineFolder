@@ -5,6 +5,38 @@ void createList(struct clientList *clientList)
 	clientList = NULL;
 }
 
+void createServerList(struct serverList *serverList)
+{
+	serverList = NULL;
+}
+
+void insertServerList(struct serverList **serverList, char *name){
+
+	struct serverList *server_node= malloc(sizeof(struct serverList));
+	struct serverList *pointer = *serverList;
+
+	server_node->next=NULL;
+	/* if(strcspn(name, "\n")>0)
+        name[strcspn(name, "\n")] = 0;*/
+	strcpy(server_node->serverName,name);
+	server_node->isPrimary=FALSE;
+
+	if(*serverList == NULL)
+	{
+		server_node->isPrimary=TRUE;
+		*serverList = server_node;
+		return;
+	}
+	else
+	{
+		while(pointer->next != NULL)
+			pointer= pointer->next;
+
+		pointer->next = server_node;
+	}
+	return;
+}
+
 int insertList(struct clientList **clientList, struct client client)
 {
 	struct clientList *client_node;

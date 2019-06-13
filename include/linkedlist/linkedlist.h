@@ -17,6 +17,9 @@
 #define DOWNLOADALL 5
 #define EXIT 4
 
+#define TRUE 1
+#define FALSE 0
+
 
 void createList(struct clientList *clientList); //Cria a lista
 /*
@@ -31,5 +34,10 @@ int isEmpty(struct clientList *clientList);
 Encontra um cliente na lista apartir do username do mesmo. Retorna 0 caso não encontre o clinte 
 */
 int findNode(char *userName, struct clientList *clientList, struct clientList **client);
+//insere servidor em uma lista encadeada
+void insertServerList(struct serverList **serverList, char *name);
+//inicia a lista encadeada de servidores
+void createServerList(struct serverList *serverList);
+
 
 #endif

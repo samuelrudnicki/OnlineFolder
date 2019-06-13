@@ -10,6 +10,8 @@
 
 #define PORT 4000
 
+#define CONNECTPORT 4001
+
 #define ERRORCODE -1
 
 #define SUCCESS 0

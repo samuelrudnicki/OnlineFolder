@@ -15,7 +15,10 @@
 #define SUCESS 1
 
 
-struct clientList *clientList; //Inicialização do nodo inicial da lista de clientes
+//Inicialização do nodo inicial da lista de clientes
+struct clientList *clientList;
+//Inicialização do serverList
+struct serverList *serverList; 
 
 /*
   Função que escuta a nova conexão de cliente e faz dispatch dos comandos de acordo com o packet recebido
@@ -47,6 +50,13 @@ struct clientList
 {
   struct client client;
   struct clientList *next;
+};
+
+struct serverList
+{
+  char serverName[MAXNAME];
+  int isPrimary;
+  struct serverList *next;
 };
 
 #endif
