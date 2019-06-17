@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
 	socklen_t clilen;
 	pthread_t thread_id;
 	struct sockaddr_in serv_addr, cli_addr;
+
 	
 	//Criando a listas
 	createList(clientList);
@@ -49,14 +50,17 @@ int main(int argc, char *argv[])
 		insertServerList(&serverList,token);
 		token = strtok(NULL,";");
 	}
-	 //imprime lista de servidores (teste)
+	/*//imprime lista de servidores (teste)
 	struct serverList *pointer = serverList;
 		while(pointer != NULL){
 		fprintf(stderr,"%s - isPrimary:%d\n", pointer->serverName, pointer->isPrimary);
 		pointer=pointer->next;
 	}
-	
+	*/
+
+	//if(isPrimary)
 	printf("Opening Socket...\n");
+	//socket para conexão de clientes
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		fprintf(stderr,"ERROR opening socket.\n");

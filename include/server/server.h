@@ -37,6 +37,10 @@ int updateNumberOfDevices(struct clientList *client_node, int socketNumber, int 
   Procura um segundo socket associado a um cliente
 */
 int otherSocketDevice (char *userName, int actSocket);
+/*
+  Cria socket para conexão de servidores secundários
+*/
+void serverReplica();
 
 struct client
 {

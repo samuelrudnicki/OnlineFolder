@@ -11,12 +11,14 @@
 #include <errno.h>
 #include "../../include/common/common.h"
 #include "../../include/linkedlist/linkedlist.h"
+#include "../../include/client/client.h"
+
 
 
 int serverSockfd;
 int exitCommand = FALSE;
 void secundary(char *primaryServer){
-
+//TODO: CONECTAR AO SERVIDOR E REPLICAR TUDO O QUE HÁ NELE - PASTAS/ARQUIVOS
     int initialization = 1;
     pthread_t thread_inotify, thread_listener, thread_writer, thread_reconnection;
     struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
@@ -24,9 +26,7 @@ void secundary(char *primaryServer){
     while(exitCommand == FALSE){
         if(initialization){
             connectToServer(primaryServer,SERVERPORT);
-            if(authorization(userName) == TRUE) {
-                inotyClient->socket = serverSockfd;
-                strcpy(inotyClient->userName, userName);
+            
                 if(pthread_create(&thread_reconnection, NULL, serverReconnection, NULL) < 0){ // Server reconnection
                     fprintf(stderr,"ERROR, could not create listener thread.\n");
                     exit(-1);
@@ -50,7 +50,6 @@ void secundary(char *primaryServer){
 
                 initialization = 0;
             }
-        } else {
             sem_wait(&reconnectionSemaphore);
             close(serverSockfd);
             connectToServer(newServerIp,newServerPort);

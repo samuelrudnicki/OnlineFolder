@@ -286,3 +286,52 @@ int otherSocketDevice (char *userName, int actSocket) {
     }
 
 }
+
+void serverReplica(){
+
+    int sockfd, newsockfd;
+    socklen_t clilen;
+    struct sockaddr_in serv_addr, cli_addr;
+    pthread_t thread_id;
+
+
+    printf("Opening Socket for replicas...\n");
+    //socket para conexão de replicas
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		fprintf(stderr,"ERROR opening socket.\n");
+		exit(-1);
+	}
+	
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(SERVERPORT);
+	serv_addr.sin_addr.s_addr = INADDR_ANY;
+	bzero(&(serv_addr.sin_zero), 8);    
+
+	printf("Binding Socket for replicas...\n");
+
+	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+		fprintf(stderr,"ERROR on binding.\n");
+		exit(-1);
+	}
+	
+	listen(sockfd, 5);
+	
+	clilen = sizeof(struct sockaddr_in);
+
+	printf("Accepting new connections...\n");
+
+	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
+		printf("Connection Accepted\n");
+
+		if(pthread_create(&thread_id, NULL, handleConnection, (void*)&newsockfd) < 0){
+			fprintf(stderr,"ERROR, could not create thread.\n");
+			exit(-1);
+		}
+
+		printf("Handler Assigned\n");
+
+	}
+		
+	close(sockfd);
+	return 0; 
+}
