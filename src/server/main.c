@@ -49,13 +49,13 @@ int main(int argc, char *argv[])
 		insertServerList(&serverList,token);
 		token = strtok(NULL,";");
 	}
-	/* //imprime lista de servidores (teste)
+	 //imprime lista de servidores (teste)
 	struct serverList *pointer = serverList;
 		while(pointer != NULL){
 		fprintf(stderr,"%s - isPrimary:%d\n", pointer->serverName, pointer->isPrimary);
 		pointer=pointer->next;
 	}
-	*/
+	
 	printf("Opening Socket...\n");
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {

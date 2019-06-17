@@ -12,6 +12,8 @@
 
 #define RECONNECTION_PORT 4070
 
+#define SERVERPORT 4010
+
 #define ERRORCODE -1
 
 #define SUCCESS 0
@@ -206,6 +208,10 @@ void mirrorUploadCommand(int sockfd, char *path, char *clientName);
   Confirma que o servidor fez a ação do inotify
 */
 void inotifyConfirmation(int sockfd, char *path, char *clientName);
+/*
+  Retorna no buffer 'ip' o IP desejado ("eth0"....).
+*/
+void myIp(char* wantedIP, char* ip);
 
 
 #endif
