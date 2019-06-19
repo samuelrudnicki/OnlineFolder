@@ -53,12 +53,13 @@ int main(int argc, char *argv[])
 	}
 	//imprime lista de servidores (teste)
 	struct serverList *pointer = serverList;
-		while(pointer != NULL){
-		fprintf(stderr,"%s - isPrimary:%d\n", pointer->serverName, pointer->isPrimary);
+	struct serverList *anotherPointer = serverList;
+		do{
+		fprintf(stderr,"%s - isPrimary:%d - Previous: %s\n", pointer->serverName, isPrimary(pointer->serverName,&serverList), previousServer(pointer->serverName,&serverList));
 		
 		pointer=pointer->next;
 
-	}
+	}while(pointer!= anotherPointer);
 	
 	//abre conexão replica
 

@@ -42,8 +42,8 @@ void insertServerList(struct serverList **serverList, char *name){
 	struct serverList *beginPointer = *serverList;
 
 	//struct serverList *anotherPointer = *serverList;
-	server_node->next=NULL;
-	server_node->previous=NULL;
+	server_node->next=server_node;
+	server_node->previous=server_node;
 	/* if(strcspn(name, "\n")>0)
         name[strcspn(name, "\n")] = 0;*/
 	strcpy(server_node->serverName,name);
@@ -57,12 +57,12 @@ void insertServerList(struct serverList **serverList, char *name){
 	}
 	else
 	{
-		while(pointer->next != NULL)
+		while(pointer->next != beginPointer)
 			pointer= pointer->next;
-			
+
 		pointer->next = server_node;
 		pointer->next->previous=pointer;
-		pointer->next->next=*serverList;
+		pointer->next->next=beginPointer;
 		beginPointer->previous=pointer->next;
 	}
 	return;
