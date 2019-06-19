@@ -11,6 +11,7 @@
 #include <errno.h>
 #include "../../include/common/common.h"
 #include "../../include/linkedlist/linkedlist.h"
+#include "../../include/server/secondary.h"
 	
 
 int main(int argc, char *argv[])
@@ -20,6 +21,7 @@ int main(int argc, char *argv[])
 	socklen_t clilen;
 	pthread_t thread_id, thread_replica;
 	struct sockaddr_in serv_addr, cli_addr;
+	char *ip=malloc(sizeof(MAXNAME));
 
 	
 	//Criando a listas
@@ -51,7 +53,7 @@ int main(int argc, char *argv[])
 		insertServerList(&serverList,token);
 		token = strtok(NULL,";");
 	}
-	//imprime lista de servidores (teste)
+	/*//imprime lista de servidores (teste) 
 	struct serverList *pointer = serverList;
 	struct serverList *anotherPointer = serverList;
 		do{
@@ -60,17 +62,20 @@ int main(int argc, char *argv[])
 		pointer=pointer->next;
 
 	}while(pointer!= anotherPointer);
-	
+	*/
 	//abre conexão replica
+	myIp(WANTED_IP, ip);
+	if(!isPrimary(ip,&serverList)){
+		secondary(primaryServer(&serverList));
+	}
+		
 
-	//if(isPrimary)
 
-/*
-	if(pthread_create(&thread_replica, NULL, serverReplica, NULL) < 0){
+	if(pthread_create(&thread_replica, NULL, createServer, (void *)SERVERPORT) < 0){
 		fprintf(stderr,"ERROR, could not create thread.\n");
 		exit(-1);
 	}
-*/
+
 	printf("Opening Socket...\n");
 	//socket para conexão de clientes
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {

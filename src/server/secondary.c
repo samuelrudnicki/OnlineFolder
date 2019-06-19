@@ -19,7 +19,7 @@
 int serverSockfd;
 int exitCommand = FALSE;
 int serverRing[RING_MAX_LENGTH]={0};
-void secundary(char *primaryServer){
+void secondary(char *primaryServer){
 //TODO: CONECTAR AO SERVIDOR E REPLICAR TUDO O QUE HÁ NELE - PASTAS/ARQUIVOS
     int initialization = 1;
     pthread_t thread_inotify, thread_listener, thread_writer, thread_reconnection;

@@ -43,4 +43,8 @@ int isPrimary(char *serverName, struct serverList **serverList);
 Retona servername anterior na lista
 */
 char* previousServer(char *serverName, struct serverList **serverList);
+/*
+Retona servername do primario
+*/
+char* primaryServer(struct serverList **serverList);
 #endif

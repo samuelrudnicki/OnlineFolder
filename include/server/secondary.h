@@ -5,6 +5,10 @@
 #define RING_MAX_LENGTH 3
 #define RING_PORT 5555
 /*
+Define funcionamento dos servidores de backup
+*/
+void secondary(char *primaryServer);
+/*
 Envia elect para o proximo do anel
 */
 void sendElectToNext(int sockfd,int serverNumber);

@@ -7,16 +7,34 @@ void createList(struct clientList *clientList)
 int isPrimary(char *serverName, struct serverList **serverList){
 
 	struct serverList *pointer = *serverList;
+	struct serverList *anotherPointer = *serverList;
 
-	while(pointer != NULL){
+	do{
 		if(strcmp(serverName, pointer->serverName) == 0)
 			return pointer->isPrimary;
 		else
 		{
 			pointer = pointer->next;
 		}
-	}
+	}while(pointer != anotherPointer);
 	return 0;
+}
+
+char* primaryServer(struct serverList **serverList){
+	
+	struct serverList *pointer = *serverList;
+	struct serverList *anotherPointer = *serverList;
+
+	do{
+		if(pointer->isPrimary == TRUE)
+			return pointer->serverName;
+		else
+		{
+			pointer = pointer->next;
+		}
+	}while(pointer != anotherPointer);
+
+	return "there is no primary in tha house";
 }
 char* previousServer(char *serverName, struct serverList **serverList){
 	struct serverList *pointer = *serverList;

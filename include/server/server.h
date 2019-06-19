@@ -40,7 +40,7 @@ int otherSocketDevice (char *userName, int actSocket);
 /*
   Cria servidor -- retorna socket
 */
-int *createServer(int serverPort);
+void *createServer(void* serverPort);
 
 struct client
 {

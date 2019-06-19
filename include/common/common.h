@@ -67,6 +67,9 @@
 
 #define PACKET_SIZE (sizeof (struct packet))
 
+#define WANTED_IP "wlx54e6fc8fe2f1"
+
+
 
 typedef struct packet {
     uint16_t type; // Tipo do pacote ( DATA | CMD )
