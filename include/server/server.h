@@ -38,9 +38,9 @@ int updateNumberOfDevices(struct clientList *client_node, int socketNumber, int 
 */
 int otherSocketDevice (char *userName, int actSocket);
 /*
-  Cria socket para conexão de servidores secundários
+  Cria servidor -- retorna socket
 */
-void serverReplica();
+int *createServer(int serverPort);
 
 struct client
 {
@@ -61,6 +61,7 @@ struct serverList
   char serverName[MAXNAME];
   int isPrimary;
   struct serverList *next;
+  struct serverList *previous;
 };
 
 #endif

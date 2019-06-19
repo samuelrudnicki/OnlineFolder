@@ -212,6 +212,9 @@ void inotifyConfirmation(int sockfd, char *path, char *clientName);
   Retorna no buffer 'ip' o IP desejado ("eth0"....).
 */
 void myIp(char* wantedIP, char* ip);
-
+/*
+  Connect to server -- retorna socket
+*/
+int connectToServerTest(char* serverIp, char* serverPort);
 
 #endif

@@ -4,9 +4,9 @@ void createList(struct clientList *clientList)
 {
 	clientList = NULL;
 }
-int isPrimary(char *serverName, struct serverList *serverList){
+int isPrimary(char *serverName, struct serverList **serverList){
 
-	struct serverList *pointer = serverList;
+	struct serverList *pointer = *serverList;
 
 	while(pointer != NULL){
 		if(strcmp(serverName, pointer->serverName) == 0)
@@ -18,6 +18,19 @@ int isPrimary(char *serverName, struct serverList *serverList){
 	}
 	return 0;
 }
+char* previousServer(char *serverName, struct serverList **serverList){
+	struct serverList *pointer = *serverList;
+
+	while(pointer != NULL){
+		if(strcmp(serverName, pointer->serverName) == 0)
+			return pointer->previous->serverName;
+		else
+		{
+			pointer = pointer->next;
+		}
+	}
+	return "not found bitch";
+}
 void createServerList(struct serverList *serverList)
 {
 	serverList = NULL;
@@ -26,8 +39,11 @@ void insertServerList(struct serverList **serverList, char *name){
 
 	struct serverList *server_node= malloc(sizeof(struct serverList));
 	struct serverList *pointer = *serverList;
+	struct serverList *beginPointer = *serverList;
 
+	//struct serverList *anotherPointer = *serverList;
 	server_node->next=NULL;
+	server_node->previous=NULL;
 	/* if(strcspn(name, "\n")>0)
         name[strcspn(name, "\n")] = 0;*/
 	strcpy(server_node->serverName,name);
@@ -43,8 +59,11 @@ void insertServerList(struct serverList **serverList, char *name){
 	{
 		while(pointer->next != NULL)
 			pointer= pointer->next;
-
+			
 		pointer->next = server_node;
+		pointer->next->previous=pointer;
+		pointer->next->next=*serverList;
+		beginPointer->previous=pointer->next;
 	}
 	return;
 }

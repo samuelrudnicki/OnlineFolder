@@ -16,8 +16,9 @@
 int main(int argc, char *argv[])
 {
 	int sockfd, newsockfd;
+	
 	socklen_t clilen;
-	pthread_t thread_id;
+	pthread_t thread_id, thread_replica;
 	struct sockaddr_in serv_addr, cli_addr;
 
 	
@@ -50,18 +51,27 @@ int main(int argc, char *argv[])
 		insertServerList(&serverList,token);
 		token = strtok(NULL,";");
 	}
-	/*//imprime lista de servidores (teste)
+	//imprime lista de servidores (teste)
 	struct serverList *pointer = serverList;
 		while(pointer != NULL){
 		fprintf(stderr,"%s - isPrimary:%d\n", pointer->serverName, pointer->isPrimary);
+		
 		pointer=pointer->next;
+
 	}
-	*/
+	
+	//abre conexão replica
 
 	//if(isPrimary)
+
+/*
+	if(pthread_create(&thread_replica, NULL, serverReplica, NULL) < 0){
+		fprintf(stderr,"ERROR, could not create thread.\n");
+		exit(-1);
+	}
+*/
 	printf("Opening Socket...\n");
 	//socket para conexão de clientes
-
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		fprintf(stderr,"ERROR opening socket.\n");
 		exit(-1);
@@ -92,7 +102,6 @@ int main(int argc, char *argv[])
 			fprintf(stderr,"ERROR, could not create thread.\n");
 			exit(-1);
 		}
-
 		printf("Handler Assigned\n");
 
 	}

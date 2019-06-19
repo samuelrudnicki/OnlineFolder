@@ -38,5 +38,9 @@ void insertServerList(struct serverList **serverList, char *name);
 //inicia a lista encadeada de servidores
 void createServerList(struct serverList *serverList);
 //1 se é servidor primario, 0 se nao
-int isPrimary(char *serverName, struct serverList *serverList);
+int isPrimary(char *serverName, struct serverList **serverList);
+/*
+Retona servername anterior na lista
+*/
+char* previousServer(char *serverName, struct serverList **serverList);
 #endif

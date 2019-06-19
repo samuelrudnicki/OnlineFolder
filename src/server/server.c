@@ -121,7 +121,7 @@ void *handleConnection(void *socketDescriptor) {
                 }
                 else{
                     //cliente nem esta na lista
-}
+                }
                 break;
             case TYPE_INOTIFY:
                 readyToDownload(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
@@ -287,7 +287,7 @@ int otherSocketDevice (char *userName, int actSocket) {
 
 }
 
-void serverReplica(){
+int *createServer(int serverPort){
 
     int sockfd, newsockfd;
     socklen_t clilen;
@@ -303,7 +303,7 @@ void serverReplica(){
 	}
 	
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(SERVERPORT);
+	serv_addr.sin_port = htons(serverPort);
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(serv_addr.sin_zero), 8);    
 

@@ -12,11 +12,13 @@
 #include "../../include/common/common.h"
 #include "../../include/linkedlist/linkedlist.h"
 #include "../../include/client/client.h"
+#include "../../include/server/secondary.h"
 
 
 
 int serverSockfd;
 int exitCommand = FALSE;
+int serverRing[RING_MAX_LENGTH]={0};
 void secundary(char *primaryServer){
 //TODO: CONECTAR AO SERVIDOR E REPLICAR TUDO O QUE HÁ NELE - PASTAS/ARQUIVOS
     int initialization = 1;
@@ -64,35 +66,83 @@ void secundary(char *primaryServer){
         pthread_join(thread_listener,NULL);
         // Se o listener fechar, server respondeu com zero no TCP
         printf("Server failure, waiting for new primary server.\n");
+        close(serverSockfd);
     }
 
-    close(serverSockfd);
-}
 
 
 
 
 void election(){
+
+    int i;
+    int sockfd;
+    int sockrcv;
+    //cria servidor de anel
+    sockfd = createServer(RING_PORT);
+
+    //conecta o anel
+    sockrcv = connectToServerTest(,RING_PORT)
+    
     //lẽ de uma lista os valores inseridos e envia para o proximo
-    sendElectToNext();
+    for(i=0;i<RING_MAX_LENGTH;i++)
+        sendElectToNext(sockfd,i);
 
     //quando receber um valor que já tenha em sua lista envia um elected com o maior valor na lista (X)
 
     //quando o servidor X receber elected X, a eleição acabou e pode se tornar o primario
 }
-
-void sendElectToNext(int serverNumber){
+void sendElectedtoNext(int sockfd, int serverNumber){
 
     char buffer[PAYLOAD_SIZE]={0};
     int status;
 
-    sprintf(buffer,"ELECT%d",serverNumber);
+    sprintf(buffer,"ELECTED;%d;",serverNumber);
 
-    status=write(serverSockfd,buffer,PAYLOAD_SIZE);
+    status=write(sockfd,buffer,PAYLOAD_SIZE);
 
     if (status < 0) 
         printf("ERROR writing to socket\n");
 
 }
 
+void sendElectToNext(int sockfd, int serverNumber){
 
+    char buffer[PAYLOAD_SIZE]={0};
+    int status;
+
+    sprintf(buffer,"ELECT;%d;",serverNumber);
+
+    status=write(sockfd,buffer,PAYLOAD_SIZE);
+
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+
+}
+
+void readElectAndElected(int sockfd){
+
+    char buffer[PAYLOAD_SIZE]= {0};
+    int status;
+    char *token;
+    int i;
+    int alreadyReceivedElected=0;
+
+    status=read(sockfd,buffer,PAYLOAD_SIZE);
+    if (status < 0) 
+            printf("ERROR reading from socket");
+    
+    token=strtok(buffer,";");
+    if(strcmp(token,"ELECT") == 0){
+        token=strtok(buffer,NULL);
+        serverRing[atoi(token)]=TRUE;
+        for(i=0;i<RING_MAX_LENGTH;i++)
+            sendElectToNext(sockfd,i);
+    }else{
+        token=strtok(buffer,NULL);
+        for(i=0;i<RING_MAX_LENGTH;i++){
+            serverRing[i]=0;
+        }
+        sendElectedtoNext(sockfd,atoi(token));
+    }
+}
