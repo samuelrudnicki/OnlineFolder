@@ -16,62 +16,50 @@
 
 
 
-int serverSockfd;
-int exitCommand = FALSE;
-int serverRing[RING_MAX_LENGTH]={0};
 void secondary(char *primaryServer){
 //TODO: CONECTAR AO SERVIDOR E REPLICAR TUDO O QUE HÁ NELE - PASTAS/ARQUIVOS
-    int initialization = 1;
-    pthread_t thread_inotify, thread_listener, thread_writer, thread_reconnection;
-    struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
+   // int initialization = 1;
+    //pthread_t thread_inotify, thread_listener, thread_writer, thread_reconnection;
+    //struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
+    int serverSockfd;
+    struct hostent *server;
+    struct sockaddr_in serv_addr;
+    char *buffer= malloc(sizeof(PAYLOAD_SIZE));
+    int status;
+    
+    server = gethostbyname(primaryServer);
 
-    while(exitCommand == FALSE){
-        if(initialization){
-            connectToServer(primaryServer,SERVERPORT);
-            
-                if(pthread_create(&thread_reconnection, NULL, serverReconnection, NULL) < 0){ // Server reconnection
-                    fprintf(stderr,"ERROR, could not create listener thread.\n");
-                    exit(-1);
-                }
-                checkAndCreateDir(userName);
-                deleteAll(userName);
-                synchronize(serverSockfd,userName);
-                
-                if(pthread_create(&thread_inotify, NULL, inotifyWatcher, (void *) inotyClient) < 0){ // Inotify
-                    fprintf(stderr,"ERROR, could not create inotify thread.\n");
-                    exit(-1);
-                }
-                if(pthread_create(&thread_listener, NULL, listener, NULL) < 0){ // Updates from server
-                    fprintf(stderr,"ERROR, could not create listener thread.\n");
-                    exit(-1);
-                }
-                if(pthread_create(&thread_writer, NULL, writer, (void *) userName) < 0){ // Inotify
-                    fprintf(stderr,"ERROR, could not create writer thread.\n");
-                    exit(-1);
-                }
+	if (server == NULL) {
+        fprintf(stderr,"ERROR, no such host\n");
+        exit(-1);
+    }
+    
+    if ((serverSockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        printf("ERROR opening socket\n");
+        exit(-1);
+    }
+    
+	serv_addr.sin_family = AF_INET;     
+	serv_addr.sin_port = htons(SERVERPORT);
+    serv_addr.sin_addr = *((struct in_addr *)server->h_addr_list[0]);
+	bzero(&(serv_addr.sin_zero), 8);
 
-                initialization = 0;
-            }
-            sem_wait(&reconnectionSemaphore);
-            close(serverSockfd);
-            connectToServer(newServerIp,newServerPort);
-            if(authorization(userName) == TRUE) {
-                if(pthread_create(&thread_listener, NULL, listener, NULL) < 0){ // Updates from server
-                    fprintf(stderr,"ERROR, could not create listener thread.\n");
-                    exit(-1);
-                }
-            }
-        }
-
-        pthread_join(thread_listener,NULL);
-        // Se o listener fechar, server respondeu com zero no TCP
-        printf("Server failure, waiting for new primary server.\n");
-        close(serverSockfd);
+    
+	if (connect(serverSockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+        printf("ERROR connecting\n");
+        exit(-1);
     }
 
+    while(1){
+        status = read(serverSockfd,buffer,PAYLOAD_SIZE);
+            if(status = -1){
+                election();
+                break;
+            }
+                
+    }
 
-
-
+}
 
 void election(){
 
@@ -79,7 +67,10 @@ void election(){
     int sockfd;
     int sockrcv;
     //cria servidor de anel
-    sockfd = createServer(RING_PORT);
+
+    printf("Starting election process");
+
+    sockfd = (RING_PORT);
 
     //conecta o anel
     sockrcv = connectToServerTest(,RING_PORT)

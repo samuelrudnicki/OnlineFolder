@@ -3,7 +3,6 @@
 #include <pthread.h>
 
 #define RING_MAX_LENGTH 3
-#define RING_PORT 5555
 /*
 Define funcionamento dos servidores de backup
 */

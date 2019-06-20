@@ -11,6 +11,7 @@
 
 #define INSERTDEVICE 0
 #define REMOVEDEVICE 1
+#define RING_PORT 5555
 
 #define SUCESS 1
 
@@ -38,9 +39,14 @@ int updateNumberOfDevices(struct clientList *client_node, int socketNumber, int 
 */
 int otherSocketDevice (char *userName, int actSocket);
 /*
-  Cria servidor -- retorna socket
+  Cria servidor primario-- retorna socket
 */
-void *createServer(void* serverPort);
+void *createServerPrimary();
+/*
+  Cria servidor ring
+*/
+void *createServerRing();
+
 
 struct client
 {

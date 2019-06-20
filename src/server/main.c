@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
 		pointer=pointer->next;
 
 	}while(pointer!= anotherPointer);
+
 	*/
 	//abre conexão replica
 	myIp(WANTED_IP, ip);
@@ -71,7 +72,7 @@ int main(int argc, char *argv[])
 		
 
 
-	if(pthread_create(&thread_replica, NULL, createServer, (void *)SERVERPORT) < 0){
+	if(pthread_create(&thread_replica, NULL, createServerPrimary, NULL) < 0){
 		fprintf(stderr,"ERROR, could not create thread.\n");
 		exit(-1);
 	}
