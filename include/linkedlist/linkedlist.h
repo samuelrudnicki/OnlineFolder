@@ -44,6 +44,10 @@ Retona servername anterior na lista
 */
 struct serverList *previousServer(char *serverName,int myPORT, struct serverList **serverList);
 /*
+ Acha servidor na lista
+ */
+struct serverList *findServer(char *serverName, int port, struct serverList **serverList);
+/*
 Retona servername do primario
 */
 struct serverList *primaryServer(struct serverList **serverList);

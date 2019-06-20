@@ -18,7 +18,7 @@ void sendElectToNext(int sockfd,int serverNumber);
 /*
 Inicia processo de eleicao
 */
-int election();
+void election();
 /*
 Envia elected para o proximo do anel
 */

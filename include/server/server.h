@@ -63,6 +63,7 @@ struct serverList
 {
   char serverName[MAXNAME];
   int port;
+  int id;
   int isPrimary;
   struct serverList *next;
   struct serverList *previous;

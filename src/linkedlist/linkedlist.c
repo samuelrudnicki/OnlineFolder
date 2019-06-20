@@ -1,4 +1,5 @@
 #include "../../include/linkedlist/linkedlist.h"
+int id = 0;
 
 void createList(struct clientList *clientList)
 {
@@ -49,6 +50,20 @@ struct serverList *previousServer(char *serverName, int myPORT, struct serverLis
 	}
 	return NULL;
 }
+
+struct serverList *findServer(char *serverName, int port, struct serverList **serverList){
+	struct serverList *pointer = *serverList;
+
+	while(pointer != NULL){
+		if(strcmp(serverName, pointer->serverName) == 0 && pointer->port == port)
+			return pointer;
+		else
+		{
+			pointer = pointer->next;
+		}
+	}
+	return NULL;
+}
 void createServerList(struct serverList *serverList)
 {
 	serverList = NULL;
@@ -66,6 +81,7 @@ void insertServerList(struct serverList **serverList, char *name, int port){
         name[strcspn(name, "\n")] = 0;*/
 	strcpy(server_node->serverName,name);
 	server_node->port = port;
+	server_node->id = id++;
 	server_node->isPrimary=FALSE;
 
 	if(*serverList == NULL)
@@ -152,3 +168,5 @@ int removeFromServerList(struct serverList **serverList, char* primaryServerIp, 
 	}while(pointer != beginPointer);
 	return FALSE;
 }
+
+

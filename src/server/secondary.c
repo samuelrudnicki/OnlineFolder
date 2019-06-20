@@ -14,14 +14,21 @@
 #include "../../include/client/client.h"
 #include "../../include/server/secondary.h"
 
+sem_t listenRingSemaphore;
+sem_t writeRingSemaphore;
 
+int highestID = -1;
+int participant = FALSE;
+int FINISHED = FALSE;
+int hasElected = FALSE;
+int primaryServerSockfd;
 
 void secondaryServer(char *primaryServerIp,int primaryServerPort){
 //TODO: CONECTAR AO SERVIDOR E REPLICAR TUDO O QUE HÁ NELE - PASTAS/ARQUIVOS
    // int initialization = 1;
     //pthread_t thread_inotify, thread_listener, thread_writer, thread_reconnection;
     //struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
-    int serverSockfd;
+    int primaryServerSockfd;
     struct hostent *server;
     struct sockaddr_in serv_addr;
     char buffer[PAYLOAD_SIZE];
@@ -34,7 +41,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
         exit(-1);
     }
     
-    if ((serverSockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    if ((primaryServerSockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         printf("ERROR opening socket\n");
         exit(-1);
     }
@@ -45,26 +52,33 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
 	bzero(&(serv_addr.sin_zero), 8);
 
     
-	if (connect(serverSockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+	if (connect(primaryServerSockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
         printf("ERROR connecting\n");
         exit(-1);
     }
 
     while(1){
-        status = read(serverSockfd,buffer,PAYLOAD_SIZE);
+        status = read(primaryServerSockfd,buffer,PAYLOAD_SIZE);
             if(status == 0){
                 removeFromServerList(&serverList,primaryServerIp,primaryServerPort);
-                close(serverSockfd);
-                serverSockfd = election();
-                break;
+                close(primaryServerSockfd);
+                election();
             }
                 
     }
 
 }
-int election() {
+void election() {
+    sem_init(&listenRingSemaphore,0,0);
+    sem_init(&writeRingSemaphore,0,1);
+    highestID = -1;
+    participant = FALSE;
+    FINISHED = FALSE;
+    hasElected = FALSE;
     createServerRing();
-    return 0;
+    sem_close(&listenRingSemaphore);
+    sem_close(&writeRingSemaphore);
+
 }
 
 void createServerRing(){
@@ -72,7 +86,7 @@ void createServerRing(){
     int sockfd, newsockfd;
     socklen_t clilen;
     struct sockaddr_in serv_addr, cli_addr;
-    pthread_t thread_id;
+    pthread_t thread_id, thread_id2;
 
     printf("Opening Socket... RING\n");
     //socket conexao anel
@@ -99,14 +113,14 @@ void createServerRing(){
 
 	printf("Accepting new connections... -- RING\n");
 
-	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
+    if(pthread_create(&thread_id, NULL, writeToRing, NULL) < 0){
+		fprintf(stderr,"ERROR, could not create thread.\n");
+		exit(-1);
+	}
+	if ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
 		printf("Connection Accepted -- RING\n");
 
-		if(pthread_create(&thread_id, NULL, listenFromRing, (void*)&newsockfd) < 0){
-			fprintf(stderr,"ERROR, could not create thread.\n");
-			exit(-1);
-		}
-        if(pthread_create(&thread_id, NULL, writeToRing, NULL) < 0){
+		if(pthread_create(&thread_id2, NULL, listenFromRing, (void*)&newsockfd) < 0){
 			fprintf(stderr,"ERROR, could not create thread.\n");
 			exit(-1);
 		}
@@ -114,28 +128,60 @@ void createServerRing(){
 		printf("Handler Assigned\n");
 
 	}
-		
+
+    pthread_join(thread_id2,NULL);
+	pthread_join(thread_id,NULL);
 	close(sockfd);
-	return 0; 
+	return; 
 }
+
+
+
 
 void *listenFromRing(void *socketDescriptor) {
     int sockfd = *(int*)socketDescriptor;
     int status;
     char buffer[PACKET_SIZE];
+    char* electionStatus;
+    char* receivedElectionId;
+    struct serverList* myServerNode;
+    myServerNode = findServer(ip,myPORT,&serverList);
 
-    while(1) {
-        status = read(sockfd,buffer,PACKET_SIZE);
+    while(!FINISHED) {
+        sem_wait(&listenRingSemaphore);
+        if(!FINISHED){
+            status = read(sockfd,buffer,PACKET_SIZE);
 
-        if(status < 0) {
-            printf("ERROR reading from socket -- Ring");
-            exit(-1);
+            if(status < 0) {
+                printf("ERROR reading from socket -- Ring");
+                exit(-1);
+            }
+
+            electionStatus = strtok(buffer,",");
+
+            if(strcmp("ELECTION",electionStatus)) {
+                electionStatus = strtok(NULL,",");
+                receivedElectionId = electionStatus;
+                if(atoi(receivedElectionId) > myServerNode->id) {
+                    highestID = atoi(receivedElectionId);
+                } else {
+                    highestID = myServerNode->id;
+                }
+            } else if(strcmp("ELECTED",electionStatus)) {
+                electionStatus = strtok(NULL,",");
+                receivedElectionId = electionStatus;
+                highestID = atoi(receivedElectionId);
+                // mudar servidor primario
+                FINISHED = TRUE;
+                hasElected = TRUE;
+            }
+            electionStatus = NULL;
+            receivedElectionId = NULL;
         }
-
-        printf("WRITE %s",buffer);
+        sem_post(&writeRingSemaphore);
     }
     
-
+    return NULL;
 }
 
 
@@ -143,11 +189,11 @@ void *writeToRing() {
     int serverSockfd;
     struct hostent *server;
     struct sockaddr_in serv_addr;
-    char buffer[PAYLOAD_SIZE];
-    int status;
+    char buffer[PACKET_SIZE];
     struct serverList* previousServerNode;
+    struct serverList* myServerNode;
     previousServerNode = previousServer(ip,myPORT,&serverList);
-
+    myServerNode = findServer(ip,myPORT,&serverList);
     server = gethostbyname(previousServerNode->serverName);
 
 	if (server == NULL) {
@@ -161,94 +207,41 @@ void *writeToRing() {
     }
     
 	serv_addr.sin_family = AF_INET;     
-	serv_addr.sin_port = htons(SERVERPORT);
+	serv_addr.sin_port = htons(ELECTIONPORT);
     serv_addr.sin_addr = *((struct in_addr *)server->h_addr_list[0]);
 	bzero(&(serv_addr.sin_zero), 8);
 
     
 	while (connect(serverSockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0);
 
-    printf("CONECTADO\n");
+    printf("RING STARTED\n");
 
-    while(1);
+    while(!FINISHED) {
+        sem_wait(&writeRingSemaphore);
+        if(!hasElected){
+            if(highestID < myServerNode->id && !participant){
+                participant = TRUE;
+                sprintf(buffer,"ELECTION,%d",myServerNode->id);
 
+                write(serverSockfd,buffer,PACKET_SIZE);
+            } else if (highestID > myServerNode->id){
+                sprintf(buffer,"ELECTION,%d",highestID);
 
-}
-/*
-void election(){
+                write(serverSockfd,buffer,PACKET_SIZE);
+            } else if(highestID == myServerNode->id && participant){
+                sprintf(buffer,"ELECTED,%d",myServerNode->id);
 
-    int i;
-    int sockfd;
-    int sockrcv;
-    //cria servidor de anel
-
-    printf("Starting election process");
-
-    sockfd = (RING_PORT);
-
-    //conecta o anel
-    sockrcv = connectToServerTest(,RING_PORT)
-    
-    //lẽ de uma lista os valores inseridos e envia para o proximo
-    for(i=0;i<RING_MAX_LENGTH;i++)
-        sendElectToNext(sockfd,i);
-
-    //quando receber um valor que já tenha em sua lista envia um elected com o maior valor na lista (X)
-
-    //quando o servidor X receber elected X, a eleição acabou e pode se tornar o primario
-}
-void sendElectedtoNext(int sockfd, int serverNumber){
-
-    char buffer[PAYLOAD_SIZE]={0};
-    int status;
-
-    sprintf(buffer,"ELECTED;%d;",serverNumber);
-
-    status=write(sockfd,buffer,PAYLOAD_SIZE);
-
-    if (status < 0) 
-        printf("ERROR writing to socket\n");
-
-}
-
-void sendElectToNext(int sockfd, int serverNumber){
-
-    char buffer[PAYLOAD_SIZE]={0};
-    int status;
-
-    sprintf(buffer,"ELECT;%d;",serverNumber);
-
-    status=write(sockfd,buffer,PAYLOAD_SIZE);
-
-    if (status < 0) 
-        printf("ERROR writing to socket\n");
-
-}
-
-void readElectAndElected(int sockfd){
-
-    char buffer[PAYLOAD_SIZE]= {0};
-    int status;
-    char *token;
-    int i;
-    int alreadyReceivedElected=0;
-
-    status=read(sockfd,buffer,PAYLOAD_SIZE);
-    if (status < 0) 
-            printf("ERROR reading from socket");
-    
-    token=strtok(buffer,";");
-    if(strcmp(token,"ELECT") == 0){
-        token=strtok(buffer,NULL);
-        serverRing[atoi(token)]=TRUE;
-        for(i=0;i<RING_MAX_LENGTH;i++)
-            sendElectToNext(sockfd,i);
-    }else{
-        token=strtok(buffer,NULL);
-        for(i=0;i<RING_MAX_LENGTH;i++){
-            serverRing[i]=0;
+                write(serverSockfd,buffer,PACKET_SIZE);
+                FINISHED = TRUE;
+                hasElected = TRUE;
+            }
+        } else {
+            sprintf(buffer,"ELECTED,%d",highestID);
+            write(serverSockfd,buffer,PACKET_SIZE);
         }
-        sendElectedtoNext(sockfd,atoi(token));
+
+        sem_post(&listenRingSemaphore);
     }
+
+    return NULL;
 }
-*/
