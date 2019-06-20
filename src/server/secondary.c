@@ -129,8 +129,7 @@ void createServerRing(){
 
 	}
 
-    pthread_join(thread_id2,NULL);
-	pthread_join(thread_id,NULL);
+    while(!FINISHED){};
 	close(sockfd);
 	return; 
 }
@@ -159,7 +158,7 @@ void *listenFromRing(void *socketDescriptor) {
 
             electionStatus = strtok(buffer,",");
 
-            if(strcmp("ELECTION",electionStatus)) {
+            if(strcmp("ELECTION",electionStatus) == 0) {
                 electionStatus = strtok(NULL,",");
                 receivedElectionId = electionStatus;
                 if(atoi(receivedElectionId) > myServerNode->id) {
@@ -167,7 +166,7 @@ void *listenFromRing(void *socketDescriptor) {
                 } else {
                     highestID = myServerNode->id;
                 }
-            } else if(strcmp("ELECTED",electionStatus)) {
+            } else if(strcmp("ELECTED",electionStatus) == 0) {
                 electionStatus = strtok(NULL,",");
                 receivedElectionId = electionStatus;
                 highestID = atoi(receivedElectionId);
@@ -232,6 +231,7 @@ void *writeToRing() {
                 sprintf(buffer,"ELECTED,%d",myServerNode->id);
 
                 write(serverSockfd,buffer,PACKET_SIZE);
+                //definir como primario
                 FINISHED = TRUE;
                 hasElected = TRUE;
             }

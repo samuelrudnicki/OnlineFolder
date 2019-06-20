@@ -15,10 +15,15 @@
 
 #define DEBUG
 #ifdef DEBUG
-#define DEBUGPORT 4000
+#define DEBUGPORT 4001
 #endif
 char ip[MAXNAME];	
 int myPORT;
+
+/*
+PARA FAZER SETUP DO SERVIDOR MUDAR DEFINE DO WANTED_IP E PARA DEBUGAR DEBUGPORT
+ */
+
 
 int main(int argc, char *argv[])
 {
