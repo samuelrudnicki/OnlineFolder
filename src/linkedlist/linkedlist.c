@@ -21,6 +21,23 @@ int isPrimary(char *serverName, int port, struct serverList **serverList){
 	return 0;
 }
 
+int setPrimary(int serverID, struct serverList **serverList){
+
+	struct serverList *pointer = *serverList;
+	struct serverList *anotherPointer = *serverList;
+
+	do{
+		if(pointer->id == serverID){
+			pointer->isPrimary=1;
+			return 1;
+		}else
+		{
+			pointer = pointer->next;
+		}
+	}while(pointer != anotherPointer);
+	return 0;
+}
+
 struct serverList *primaryServer(struct serverList **serverList){
 	
 	struct serverList *pointer = *serverList;

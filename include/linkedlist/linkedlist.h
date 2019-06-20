@@ -54,4 +54,6 @@ struct serverList *primaryServer(struct serverList **serverList);
 
 /* Remove servidor da lista de servidores */
 int removeFromServerList(struct serverList **serverList, char* primaryServerIp, int primaryServerPort);
+/* Define servidor como primario */
+int setPrimary(int serverID, struct serverList **serverList);
 #endif

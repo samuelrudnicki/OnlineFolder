@@ -63,9 +63,12 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                 removeFromServerList(&serverList,primaryServerIp,primaryServerPort);
                 close(primaryServerSockfd);
                 election();
+                setPrimary(highestID, &serverList);
+                return;
             }
                 
     }
+
 
 }
 void election() {
@@ -128,8 +131,8 @@ void createServerRing(){
 		printf("Handler Assigned\n");
 
 	}
-
     while(!FINISHED){};
+
 	close(sockfd);
 	return; 
 }

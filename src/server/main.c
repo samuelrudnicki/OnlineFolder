@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 	//abre conexão replica
 	
 	
-	if(!isPrimary(ip,myPORT,&serverList)){
+	while(!isPrimary(ip,myPORT,&serverList)){
 		primaryServerNode = primaryServer(&serverList);
 		secondaryServer(primaryServerNode->serverName,primaryServerNode->port);
 	}
