@@ -4,13 +4,13 @@ void createList(struct clientList *clientList)
 {
 	clientList = NULL;
 }
-int isPrimary(char *serverName, struct serverList **serverList){
+int isPrimary(char *serverName, int port, struct serverList **serverList){
 
 	struct serverList *pointer = *serverList;
 	struct serverList *anotherPointer = *serverList;
 
 	do{
-		if(strcmp(serverName, pointer->serverName) == 0)
+		if(strcmp(serverName, pointer->serverName) == 0 && pointer->port == port)
 			return pointer->isPrimary;
 		else
 		{
@@ -20,40 +20,40 @@ int isPrimary(char *serverName, struct serverList **serverList){
 	return 0;
 }
 
-char* primaryServer(struct serverList **serverList){
+struct serverList *primaryServer(struct serverList **serverList){
 	
 	struct serverList *pointer = *serverList;
 	struct serverList *anotherPointer = *serverList;
 
 	do{
 		if(pointer->isPrimary == TRUE)
-			return pointer->serverName;
+			return pointer;
 		else
 		{
 			pointer = pointer->next;
 		}
 	}while(pointer != anotherPointer);
 
-	return "there is no primary in tha house";
+	return NULL;
 }
-char* previousServer(char *serverName, struct serverList **serverList){
+struct serverList *previousServer(char *serverName, int myPORT, struct serverList **serverList){
 	struct serverList *pointer = *serverList;
 
 	while(pointer != NULL){
-		if(strcmp(serverName, pointer->serverName) == 0)
-			return pointer->previous->serverName;
+		if(strcmp(serverName, pointer->serverName) == 0 && pointer->port == myPORT)
+			return pointer->previous;
 		else
 		{
 			pointer = pointer->next;
 		}
 	}
-	return "not found bitch";
+	return NULL;
 }
 void createServerList(struct serverList *serverList)
 {
 	serverList = NULL;
 }
-void insertServerList(struct serverList **serverList, char *name){
+void insertServerList(struct serverList **serverList, char *name, int port){
 
 	struct serverList *server_node= malloc(sizeof(struct serverList));
 	struct serverList *pointer = *serverList;
@@ -65,6 +65,7 @@ void insertServerList(struct serverList **serverList, char *name){
 	/* if(strcspn(name, "\n")>0)
         name[strcspn(name, "\n")] = 0;*/
 	strcpy(server_node->serverName,name);
+	server_node->port = port;
 	server_node->isPrimary=FALSE;
 
 	if(*serverList == NULL)
@@ -130,4 +131,24 @@ int findNode(char *userid, struct clientList *clientList, struct clientList **cl
 			clientList_aux = clientList_aux->next;
 	}
 	return 0;
+}
+
+int removeFromServerList(struct serverList **serverList, char* primaryServerIp, int primaryServerPort) {
+	struct serverList *pointer = *serverList;
+	struct serverList *beginPointer = *serverList;
+
+	do{
+		if(strcmp(primaryServerIp, pointer->serverName) == 0 && pointer->port == primaryServerPort){
+			if(pointer == *serverList) {
+				*serverList = pointer->next;
+			}
+			pointer->previous->next = pointer->next;
+			pointer->next->previous = pointer->previous;
+			free(pointer);
+			return TRUE;
+		} else {
+			pointer = pointer->next;
+		}
+	}while(pointer != beginPointer);
+	return FALSE;
 }

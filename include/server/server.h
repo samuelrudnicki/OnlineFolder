@@ -11,7 +11,6 @@
 
 #define INSERTDEVICE 0
 #define REMOVEDEVICE 1
-#define RING_PORT 5555
 
 #define SUCESS 1
 
@@ -42,10 +41,8 @@ int otherSocketDevice (char *userName, int actSocket);
   Cria servidor primario-- retorna socket
 */
 void *createServerPrimary();
-/*
-  Cria servidor ring
-*/
-void *createServerRing();
+
+void copyIp(char *token,char *ipToken);
 
 
 struct client
@@ -65,6 +62,7 @@ struct clientList
 struct serverList
 {
   char serverName[MAXNAME];
+  int port;
   int isPrimary;
   struct serverList *next;
   struct serverList *previous;

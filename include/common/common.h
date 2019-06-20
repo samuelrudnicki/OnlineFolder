@@ -67,8 +67,7 @@
 
 #define PACKET_SIZE (sizeof (struct packet))
 
-#define WANTED_IP "wlx54e6fc8fe2f1"
-
+#define WANTED_IP "enp3s0"
 
 
 typedef struct packet {

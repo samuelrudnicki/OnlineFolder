@@ -12,7 +12,13 @@
 #include "../../include/common/common.h"
 #include "../../include/linkedlist/linkedlist.h"
 #include "../../include/server/secondary.h"
-	
+
+#define DEBUG
+#ifdef DEBUG
+#define DEBUGPORT 4000
+#endif
+char ip[MAXNAME];	
+int myPORT;
 
 int main(int argc, char *argv[])
 {
@@ -21,7 +27,8 @@ int main(int argc, char *argv[])
 	socklen_t clilen;
 	pthread_t thread_id, thread_replica;
 	struct sockaddr_in serv_addr, cli_addr;
-	char *ip=malloc(sizeof(MAXNAME));
+	
+	struct serverList* primaryServerNode;
 
 	
 	//Criando a listas
@@ -33,6 +40,12 @@ int main(int argc, char *argv[])
 	long lSize;
 	char *buffer;
 	char *token;
+	char ipToken[MAXNAME];
+	char *portToken;
+
+	// Pega ip próprio
+	myIp(WANTED_IP, ip);
+
 	fp=fopen("server_list.txt","r");
 	if(fp==NULL){
 		printf("\nFile Error\n");
@@ -45,29 +58,45 @@ int main(int argc, char *argv[])
 	// copia arquivo no buffer
   	buffer=(char*)malloc(sizeof(char)*lSize);	
   	fread(buffer,1,lSize,fp);
+
 	if(strcspn(buffer, "\n")>0)
         buffer[strcspn(buffer, "\n")] = 0;
 	// le tokens e adiciona a lista
-	token = strtok(buffer,";");
+	token = strtok(buffer,"-");
 	while(token != NULL && strcmp(token,"")!=0){
-		insertServerList(&serverList,token);
-		token = strtok(NULL,";");
+		portToken = strrchr(token,';');
+		portToken++;
+		copyIp(token,ipToken);
+
+		if(strcmp(ip,ipToken) == 0) {
+			#ifndef DEBUG
+				myPORT = atoi(portToken);
+			#else
+				myPORT = DEBUGPORT;
+			#endif
+		}
+
+		insertServerList(&serverList,ipToken,atoi(portToken));
+		token = strtok(NULL,"-");
+
 	}
-	/*//imprime lista de servidores (teste) 
+	/*
+	//imprime lista de servidores (teste) 
 	struct serverList *pointer = serverList;
 	struct serverList *anotherPointer = serverList;
 		do{
-		fprintf(stderr,"%s - isPrimary:%d - Previous: %s\n", pointer->serverName, isPrimary(pointer->serverName,&serverList), previousServer(pointer->serverName,&serverList));
+		fprintf(stderr,"%s - %d isPrimary:%d - Previous: %s\n", pointer->serverName, pointer->port, isPrimary(pointer->serverName,pointer->port,&serverList), previousServer(pointer->serverName,&serverList));
 		
 		pointer=pointer->next;
 
 	}while(pointer!= anotherPointer);
-
-	*/
+ 	*/
 	//abre conexão replica
-	myIp(WANTED_IP, ip);
-	if(!isPrimary(ip,&serverList)){
-		secondary(primaryServer(&serverList));
+	
+	
+	if(!isPrimary(ip,myPORT,&serverList)){
+		primaryServerNode = primaryServer(&serverList);
+		secondaryServer(primaryServerNode->serverName,primaryServerNode->port);
 	}
 		
 

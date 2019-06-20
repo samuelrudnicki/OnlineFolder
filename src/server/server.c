@@ -292,7 +292,7 @@ void *createServerPrimary(){
     int sockfd, newsockfd;
     socklen_t clilen;
     struct sockaddr_in serv_addr, cli_addr;
-    pthread_t thread_id;
+    //pthread_t thread_id;
 
     printf("Opening Socket...\n");
     //socket para conexão de replicas
@@ -335,50 +335,13 @@ void *createServerPrimary(){
 	return 0; 
 }
 
-void *createServerRing(){
 
-    int sockfd, newsockfd;
-    socklen_t clilen;
-    struct sockaddr_in serv_addr, cli_addr;
-    pthread_t thread_id;
 
-    printf("Opening Socket... RING\n");
-    //socket conexao anel
-	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		fprintf(stderr,"ERROR opening socket.\n");
-		exit(-1);
-	}
-	
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(RING_PORT);
-	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	bzero(&(serv_addr.sin_zero), 8);    
-
-	printf("Binding Socket... -- RING\n");
-
-	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-		fprintf(stderr,"ERROR on binding.\n");
-		exit(-1);
-	}
-	
-	listen(sockfd, 5);
-	
-	clilen = sizeof(struct sockaddr_in);
-
-	printf("Accepting new connections... -- RING\n");
-
-	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
-		printf("Connection Accepted -- RING\n");
-/*
-		if(pthread_create(&thread_id, NULL, handleConnection, (void*)&newsockfd) < 0){
-			fprintf(stderr,"ERROR, could not create thread.\n");
-			exit(-1);
-		}
-*/
-		printf("Handler Assigned\n");
-
-	}
-		
-	close(sockfd);
-	return 0; 
+void copyIp(char *token,char *ipToken) {
+    int i = 0;
+    while((char) *(token + i) != ';') {
+        ipToken[i] = (char) *(token + i);
+        i++;
+    }
+    ipToken[i] = '\0';
 }
