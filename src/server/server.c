@@ -16,6 +16,8 @@
 
 pthread_mutex_t clientInitMutex = PTHREAD_MUTEX_INITIALIZER;
 
+int socketServerRM[MAX_BACKUPSERVERS] = {-1};
+
 void *handleConnection(void *socketDescriptor) {
     packet incomingPacket;
     char buffer[PACKET_SIZE] = {0};
@@ -23,7 +25,6 @@ void *handleConnection(void *socketDescriptor) {
     int exitCommand = FALSE;
     int n;
     int newsockfd = *(int*)socketDescriptor;
-    int serverSock = *(int*)serverSocket;
     int idUserName;
     int idClientIp;
     char *userName = malloc(sizeof(userName));
@@ -48,10 +49,13 @@ void *handleConnection(void *socketDescriptor) {
 
     strcpy(userName , buffer);
     strcat(pathServerUsers,buffer);
-    //propagating client name and port
-
-
-    newClientCommand(serverSocket, buffer, clientIp);
+    //propagating client name and port to all connected backup servers
+    int i;
+    for(i=0;i<MAX_BACKUPSERVERS;i++){
+        if(socketServerRM[i]!= -1){
+            newClientCommand(socketServerRM[i], buffer, clientIp);
+        }
+    }
 
     struct clientList *client_node = malloc(sizeof(*client_node));//node used to find the username on the list.
     pthread_mutex_lock(&clientInitMutex);
@@ -311,7 +315,7 @@ void *createServerPrimary(){
     socklen_t clilen;
     struct sockaddr_in serv_addr, cli_addr;
     //pthread_t thread_id;
-
+    int i=0;
     printf("Opening Socket... -- PRIMARY SERVER\n");
     //socket para conexão de replicas
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -339,7 +343,9 @@ void *createServerPrimary(){
 
 	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
 		printf("Connection Accepted -- PRIMARY SERVER\n");
-
+        //coloca os sockets 
+        socketServerRM[i]=newsockfd;
+        i++;
         //get_sync_dir versao server
         // read do request do cliente
         // dai começa o get sync dir server
@@ -348,7 +354,10 @@ void *createServerPrimary(){
 		printf("Handler Assigned -- PRIMARY SERVER\n");
 
 	}
-		
+    for(int j=0;j<MAX_BACKUPSERVERS;j++){
+        socketServerRM[j]=0;
+    }
+        
 	close(sockfd);
 	return 0; 
 }
@@ -366,7 +375,6 @@ void copyIp(char *token,char *ipToken) {
 
 void newClientCommand(int sockfd, char *clientName, char *clientIp){
     
-    char* fileName;
     char serialized[PACKET_SIZE];
     packet clientPacket;
     int status;
@@ -385,7 +393,7 @@ void newClientCommand(int sockfd, char *clientName, char *clientIp){
 
 int updateNumberOfDevicesRM(struct clientList *client_node, int socketNumber, int option, char* clientIp){
     if(option == INSERTDEVICE){
-        if(client_node->client.devices[0] == FREEDEV && client_node->client.ip[0] == '\0')
+        if(client_node->client.devices[0] == FREEDEV && client_node->client.ip[0][0] == '\0')
         {
             strcpy(client_node->client.ip[0], clientIp);
             //client_node->client.devices[0] = socketNumber;

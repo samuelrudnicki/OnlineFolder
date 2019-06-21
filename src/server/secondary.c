@@ -74,7 +74,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
         deserializePacket(&incomingPacket,buffer);
 
         switch(incomingPacket.type) {
-            case TYPE_MIRROR_UPLOAD:
+            /* case TYPE_MIRROR_UPLOAD:
                 strcpy(lastFileServer,incomingPacket.fileName);
                 downloadCommand(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
                 read(serverSockfd, buffer, PACKET_SIZE);
@@ -90,6 +90,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                 printf("\nDeleting %s...\n", incomingPacket.fileName);
                 delete(serverSockfd,incomingPacket.fileName, incomingPacket.clientName);   
                 break;
+                */
             case TYPE_NEW_CLIENT:
                 printf("\nAdding new client to struct...\n");
                 struct clientList *client_node = malloc(sizeof(*client_node));//node used to find the username on the list.

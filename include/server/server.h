@@ -11,7 +11,7 @@
 
 #define INSERTDEVICE 0
 #define REMOVEDEVICE 1
-
+#define MAX_BACKUPSERVERS 5
 
 #define SUCESS 1
 
@@ -24,7 +24,7 @@ char lastFileServer[256];
 /*
   Função que escuta a nova conexão de cliente e faz dispatch dos comandos de acordo com o packet recebido
 */
-void *handleConnection(void *socketDescriptor, void *serverSocket);
+void *handleConnection(void *socketDescriptor);
 /*
   Adiciona um novo cliente na lista de clientes
 */
