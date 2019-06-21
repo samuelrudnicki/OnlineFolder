@@ -32,7 +32,10 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
     struct hostent *server;
     struct sockaddr_in serv_addr;
     char buffer[PAYLOAD_SIZE];
+    packet incomingPacket;
     int status;
+    struct serverList* myServerNode;
+    myServerNode = findServer(ip,myPORT,&serverList);
     
     server = gethostbyname(primaryServerIp);
 
@@ -59,13 +62,46 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
 
     while(1){
         status = read(primaryServerSockfd,buffer,PAYLOAD_SIZE);
-            if(status == 0){
+        if(status == 0){
+            if(myServerNode->next != myServerNode)
                 removeFromServerList(&serverList,primaryServerIp,primaryServerPort);
-                close(primaryServerSockfd);
-                election();
-                setPrimary(highestID, &serverList);
-                return;
-            }
+            close(primaryServerSockfd);
+            election();
+            setPrimary(highestID, &serverList);
+            return;
+        }
+
+        deserializePacket(&incomingPacket,buffer);
+
+        switch(incomingPacket.type) {
+            case TYPE_MIRROR_UPLOAD:
+                strcpy(lastFile,incomingPacket.fileName);
+                downloadCommand(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                read(serverSockfd, buffer, PACKET_SIZE);
+                deserializePacket(&incomingPacket,buffer);
+                if(incomingPacket.type == TYPE_UPLOAD_READY){
+                    printf("\nDownloading %s...\n", incomingPacket.fileName);
+                    download(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                    printf("\n%s Downloaded.\n", incomingPacket.fileName);
+                }
+                break;
+            case TYPE_INOTIFY_DELETE:
+                strcpy(lastFile,incomingPacket.fileName);
+                printf("\nDeleting %s...\n", incomingPacket.fileName);
+                delete(serverSockfd,incomingPacket.fileName, incomingPacket.clientName);   
+                break;
+            /*
+            case get_sync_dir_server:
+                write pro server pedindo os arquivos
+                // entra numa função que fica mandando download request: olhar clientSyncServer no client.c
+             */
+            /*
+            case NEW_CLIENT:
+                // coloca na lista de clientes
+             */
+            default:
+                break;
+        }
                 
     }
 

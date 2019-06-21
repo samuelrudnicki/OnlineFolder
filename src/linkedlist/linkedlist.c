@@ -173,7 +173,8 @@ int removeFromServerList(struct serverList **serverList, char* primaryServerIp, 
 	do{
 		if(strcmp(primaryServerIp, pointer->serverName) == 0 && pointer->port == primaryServerPort){
 			if(pointer == *serverList) {
-				*serverList = pointer->next;
+				if(pointer->next != NULL)
+					*serverList = pointer->next;
 			}
 			pointer->previous->next = pointer->next;
 			pointer->next->previous = pointer->previous;

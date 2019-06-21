@@ -14,6 +14,7 @@
 #include "../../include/common/common.h"
 #include "../../include/linkedlist/linkedlist.h"
 
+pthread_mutex_t clientInitMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *handleConnection(void *socketDescriptor) {
     packet incomingPacket;
@@ -47,7 +48,7 @@ void *handleConnection(void *socketDescriptor) {
     strcat(pathServerUsers,buffer);
 
     struct clientList *client_node = malloc(sizeof(*client_node));//node used to find the username on the list.
-
+    pthread_mutex_lock(&clientInitMutex);
     if (!findNode(buffer, clientList, &client_node)){
         appendNewClient(newsockfd, buffer, clientIp);
         checkAndCreateDir(pathServerUsers);
@@ -67,6 +68,10 @@ void *handleConnection(void *socketDescriptor) {
             write(newsockfd, auth, PACKET_SIZE);
         }
     }
+    pthread_mutex_unlock(&clientInitMutex);
+
+    /********************************/
+    // MANDA IP DO NOVO CLIENTE PROS SERVIDORES SECUNDARIOS
 
     /********************************************/
 	while(exitCommand == FALSE) {
@@ -122,6 +127,8 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
+                // mandar pra todos os servers
+                // for de servers -> mirrorUploadCommand
                 break;
             case TYPE_INOTIFY:
                 readyToDownload(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
@@ -139,6 +146,8 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
+                // mandar pra todos os servers
+                // for de servers -> mirrorUploadCommand
                 break;
             case TYPE_DOWNLOAD:
                 readyToUpload(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
@@ -159,6 +168,8 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
+                // mandar pra todos os servers
+                // for de servers -> inotifyDelCommand
                 break;
             case TYPE_DELETE:
                 delete(newsockfd,incomingPacket.fileName, pathServerUsers);
@@ -175,6 +186,7 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
+                // for de servers -> inotifyDelCommand
                 break;
             case TYPE_LIST_SERVER:
                 readyToListServer(newsockfd);
@@ -321,13 +333,13 @@ void *createServerPrimary(){
 
 	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
 		printf("Connection Accepted -- PRIMARY SERVER\n");
-/*
-		if(pthread_create(&thread_id, NULL, handleConnection, (void*)&newsockfd) < 0){
-			fprintf(stderr,"ERROR, could not create thread.\n");
-			exit(-1);
-		}
-*/
-		printf("Handler Assigned\n");
+
+        //get_sync_dir versao server
+        // read do request do cliente
+        // dai começa o get sync dir server
+
+
+		printf("Handler Assigned -- PRIMARY SERVER\n");
 
 	}
 		
