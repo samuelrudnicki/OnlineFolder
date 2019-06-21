@@ -65,6 +65,8 @@
 
 #define TYPE_INOTIFY_DELETE 75
 
+#define TYPE_NEW_CLIENT 102
+
 #define PACKET_SIZE (sizeof (struct packet))
 
 #define WANTED_IP "enp3s0"

@@ -12,6 +12,7 @@
 #define INSERTDEVICE 0
 #define REMOVEDEVICE 1
 
+
 #define SUCESS 1
 
 
@@ -19,10 +20,11 @@ struct clientList *clientList; //Inicialização do nodo inicial da lista de cli
 
 struct serverList *serverList;
 
+char lastFileServer[256];
 /*
   Função que escuta a nova conexão de cliente e faz dispatch dos comandos de acordo com o packet recebido
 */
-void *handleConnection(void *socketDescriptor);
+void *handleConnection(void *socketDescriptor, void *serverSocket);
 /*
   Adiciona um novo cliente na lista de clientes
 */
@@ -43,8 +45,15 @@ int otherSocketDevice (char *userName, int actSocket);
 void *createServerPrimary();
 
 void copyIp(char *token,char *ipToken);
+/*
+update number of devices on RMs
+*/
+int updateNumberOfDevicesRM(struct clientList *client_node, int socketNumber, int option, char* clientIp);
+/*
+New
+*/
 
-
+void newClientCommand(int sockfd, char *clientName, char *clientIp);
 struct client
 {
   int devices[2];

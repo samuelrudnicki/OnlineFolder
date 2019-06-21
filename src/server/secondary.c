@@ -75,7 +75,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
 
         switch(incomingPacket.type) {
             case TYPE_MIRROR_UPLOAD:
-                strcpy(lastFile,incomingPacket.fileName);
+                strcpy(lastFileServer,incomingPacket.fileName);
                 downloadCommand(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
                 read(serverSockfd, buffer, PACKET_SIZE);
                 deserializePacket(&incomingPacket,buffer);
@@ -86,9 +86,21 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                 }
                 break;
             case TYPE_INOTIFY_DELETE:
-                strcpy(lastFile,incomingPacket.fileName);
+                strcpy(lastFileServer,incomingPacket.fileName);
                 printf("\nDeleting %s...\n", incomingPacket.fileName);
                 delete(serverSockfd,incomingPacket.fileName, incomingPacket.clientName);   
+                break;
+            case TYPE_NEW_CLIENT:
+                printf("\nAdding new client to struct...\n");
+                struct clientList *client_node = malloc(sizeof(*client_node));//node used to find the username on the list.
+                if (!findNode(incomingPacket.clientName, clientList, &client_node)){
+                    appendNewClient(-1, incomingPacket.clientName, incomingPacket.fileName);
+                    checkAndCreateDir(incomingPacket.clientName);
+                   // sprintf(auth,"%s","authorized");
+                   // write(newsockfd, auth, PACKET_SIZE);    
+                }else {
+                    updateNumberOfDevicesRM(client_node, -1, INSERTDEVICE, incomingPacket.fileName);
+                }
                 break;
             /*
             case get_sync_dir_server:
@@ -96,7 +108,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                 // entra numa função que fica mandando download request: olhar clientSyncServer no client.c
              */
             /*
-            case NEW_CLIENT:
+
                 // coloca na lista de clientes
              */
             default:

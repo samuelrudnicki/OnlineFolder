@@ -23,6 +23,7 @@ void *handleConnection(void *socketDescriptor) {
     int exitCommand = FALSE;
     int n;
     int newsockfd = *(int*)socketDescriptor;
+    int serverSock = *(int*)serverSocket;
     int idUserName;
     int idClientIp;
     char *userName = malloc(sizeof(userName));
@@ -39,6 +40,7 @@ void *handleConnection(void *socketDescriptor) {
     idUserName = read(newsockfd,buffer,PAYLOAD_SIZE);
     if(idUserName < 0)
         printf("ERROR reading from socket");
+    
 
     idClientIp = read(newsockfd,clientIp,PAYLOAD_SIZE);
     if(idClientIp < 0)
@@ -46,6 +48,10 @@ void *handleConnection(void *socketDescriptor) {
 
     strcpy(userName , buffer);
     strcat(pathServerUsers,buffer);
+    //propagating client name and port
+
+
+    newClientCommand(serverSocket, buffer, clientIp);
 
     struct clientList *client_node = malloc(sizeof(*client_node));//node used to find the username on the list.
     pthread_mutex_lock(&clientInitMutex);
@@ -306,7 +312,7 @@ void *createServerPrimary(){
     struct sockaddr_in serv_addr, cli_addr;
     //pthread_t thread_id;
 
-    printf("Opening Socket...\n");
+    printf("Opening Socket... -- PRIMARY SERVER\n");
     //socket para conexão de replicas
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		fprintf(stderr,"ERROR opening socket.\n");
@@ -356,4 +362,55 @@ void copyIp(char *token,char *ipToken) {
         i++;
     }
     ipToken[i] = '\0';
+}
+
+void newClientCommand(int sockfd, char *clientName, char *clientIp){
+    
+    char* fileName;
+    char serialized[PACKET_SIZE];
+    packet clientPacket;
+    int status;
+    //char response[PAYLOAD_SIZE];
+
+    setPacket(&clientPacket,TYPE_NEW_CLIENT,0,0,0,clientIp,clientName,"");
+
+    serializePacket(&clientPacket,serialized);
+
+    /* write in the socket */
+
+    status = write(sockfd, serialized, PACKET_SIZE);
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+}
+
+int updateNumberOfDevicesRM(struct clientList *client_node, int socketNumber, int option, char* clientIp){
+    if(option == INSERTDEVICE){
+        if(client_node->client.devices[0] == FREEDEV && client_node->client.ip[0] == '\0')
+        {
+            strcpy(client_node->client.ip[0], clientIp);
+            //client_node->client.devices[0] = socketNumber;
+            return 1;
+        }
+        else if (client_node->client.devices[1] == FREEDEV)
+        {
+            //client_node->client.devices[1] = socketNumber;
+            strcpy(client_node->client.ip[1], clientIp);
+            return 1;
+        }
+        else{ //all devices are busy
+            return 0;
+        }
+    }
+    //REMOVE DEVICE
+    else{
+        for(int device = 0; device <= 1; device++){
+            if(strcmp(client_node->client.ip[device],clientIp) == 0){
+                client_node->client.devices[device] = FREEDEV;
+                bzero(client_node->client.ip[device], 100);
+            }
+        }
+        return 1;
+    }
+
+    return 0;
 }

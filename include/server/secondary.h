@@ -5,6 +5,7 @@
 #define RING_MAX_LENGTH 3
 #define ELECTIONPORT 4099
 
+
 extern int myPORT;
 extern char ip[MAXNAME];
 /*
