@@ -343,7 +343,7 @@ void *createServerPrimary(){
 
 	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
 		printf("Connection Accepted -- PRIMARY SERVER\n");
-        //coloca os sockets 
+        //adiciona sockets a lista de sockets conectados
         socketServerRM[i]=newsockfd;
         i++;
         //get_sync_dir versao server
@@ -393,7 +393,7 @@ void newClientCommand(int sockfd, char *clientName, char *clientIp){
 
 int updateNumberOfDevicesRM(struct clientList *client_node, int socketNumber, int option, char* clientIp){
     if(option == INSERTDEVICE){
-        if(client_node->client.devices[0] == FREEDEV && client_node->client.ip[0][0] == '\0')
+        if(client_node->client.devices[0] == FREEDEV && client_node->client.ip[0][0] == '\0')   
         {
             strcpy(client_node->client.ip[0], clientIp);
             //client_node->client.devices[0] = socketNumber;
@@ -420,5 +420,51 @@ int updateNumberOfDevicesRM(struct clientList *client_node, int socketNumber, in
         return 1;
     }
 
+    return 0;
+}
+
+int connectToFrontEnd(char *frontEndIp,char *serverIp){
+
+    int frontEndSock;
+    struct hostent *server;
+    struct sockaddr_in serv_addr;
+    char buffer[PACKET_SIZE];
+
+    server = gethostbyname(frontEndIp);
+
+	if (server == NULL) {
+        fprintf(stderr,"ERROR, no such host\n");
+        exit(-1);
+    }
+    
+    if ((frontEndSock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        printf("ERROR opening socket\n");
+        exit(-1);
+    }
+    
+	serv_addr.sin_family = AF_INET;     
+	serv_addr.sin_port = htons(RECONNECTION_PORT);
+    serv_addr.sin_addr = *((struct in_addr *)server->h_addr_list[0]);
+	bzero(&(serv_addr.sin_zero), 8);
+
+    
+	if (connect(frontEndSock,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+        printf("ERROR connecting to frontEnd\n");
+        exit(-1);
+    }
+    bzero(buffer,PACKET_SIZE);
+    strcpy(buffer,serverIp);
+    write(frontEndSock,buffer,PACKET_SIZE);
+
+    read(frontEndSock,buffer,PACKET_SIZE);
+    printf("\n%s\n",buffer);
+    bzero(buffer,PACKET_SIZE);
+
+    strcpy(buffer,"4000");
+    write(frontEndSock,buffer,PACKET_SIZE);
+    
+    read(frontEndSock,buffer,PACKET_SIZE);
+
+    close(frontEndSock);
     return 0;
 }

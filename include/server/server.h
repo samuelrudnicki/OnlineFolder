@@ -50,10 +50,13 @@ update number of devices on RMs
 */
 int updateNumberOfDevicesRM(struct clientList *client_node, int socketNumber, int option, char* clientIp);
 /*
-New
+New client command
 */
-
 void newClientCommand(int sockfd, char *clientName, char *clientIp);
+/*
+Connect to frontEnds port 4070
+*/
+int connectToFrontEnd(char *frontEndIp,char *serverIp);
 struct client
 {
   int devices[2];

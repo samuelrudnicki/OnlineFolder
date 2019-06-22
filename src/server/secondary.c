@@ -61,6 +61,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
     }
 
     while(1){
+        printf("\nWaiting to read from master\n");
         status = read(primaryServerSockfd,buffer,PAYLOAD_SIZE);
         if(status == 0){
             if(myServerNode->next != myServerNode)
@@ -120,6 +121,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
 
 
 }
+
 void election() {
     sem_init(&listenRingSemaphore,0,0);
     sem_init(&writeRingSemaphore,0,1);

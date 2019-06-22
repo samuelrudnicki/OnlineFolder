@@ -48,7 +48,7 @@ struct serverList *previousServer(char *serverName,int myPORT, struct serverList
  */
 struct serverList *findServer(char *serverName, int port, struct serverList **serverList);
 /*
-Retona servername do primario
+Retona a estrutura do servidor primario
 */
 struct serverList *primaryServer(struct serverList **serverList);
 

@@ -15,11 +15,11 @@
 
 #define DEBUG
 #ifdef DEBUG
-#define DEBUGPORT 4001
+#define DEBUGPORT 4000
 #endif
 char ip[MAXNAME];	
 int myPORT;
-
+int electionOccured=0;
 /*
 PARA FAZER SETUP DO SERVIDOR MUDAR DEFINE DO WANTED_IP E PARA DEBUGAR DEBUGPORT
  */
@@ -91,18 +91,20 @@ int main(int argc, char *argv[])
 	struct serverList *anotherPointer = serverList;
 		do{
 		fprintf(stderr,"%s - %d isPrimary:%d - Previous: %s\n", pointer->serverName, pointer->port, isPrimary(pointer->serverName,pointer->port,&serverList), previousServer(pointer->serverName,&serverList));
-		
+		[
 		pointer=pointer->next;
 
 	}while(pointer!= anotherPointer);
  	*/
 	//abre conexão replica
 	
-	
 	while(!isPrimary(ip,myPORT,&serverList)){
+		printf("Server is not primary");
 		primaryServerNode = primaryServer(&serverList);
 		secondaryServer(primaryServerNode->serverName,primaryServerNode->port);
+		electionOccured=1;
 	}
+
 		
 
 
@@ -136,6 +138,15 @@ int main(int argc, char *argv[])
 
 	printf("Accepting new connections...\n");
 
+	if(electionOccured){
+		int i=0;
+		//int j=0;
+		struct clientList *client_node = clientList;
+		while(client_node->client.ip[i][0]!=0 && i<2){
+			connectToFrontEnd(client_node->client.ip[i],ip);
+			i++;
+		}
+	}
 	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
 		printf("Connection Accepted\n");
 
