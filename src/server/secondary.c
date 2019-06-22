@@ -299,3 +299,70 @@ void *writeToRing() {
 
     return NULL;
 }
+void *listenerBackup(void *socketDescriptor){
+    char response[PACKET_SIZE];
+    int sockfd = *(int*)socketDescriptor;
+    packet incomingPacket;
+    bzero(response, PACKET_SIZE);
+    int listenerStatus;
+
+    while(1){
+        
+        listenerStatus = read(serverSockfd, response, PACKET_SIZE);
+        
+        deserializePacket(&incomingPacket,response);
+        
+
+        if(listenerStatus == 0) {
+            return NULL;
+        }
+        
+        //pthread_mutex_lock(&listenerInotifyMut);
+        //printf("PACKET: %u %u %u %u %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
+        //while(inotifyLength) {
+         //   pthread_cond_wait(&noListen, &listenerInotifyMut);
+        //}
+        listenerStatus = 0;
+        //pthread_mutex_lock(&clientMutex);
+        switch(incomingPacket.type) {
+                case TYPE_UPLOAD:
+                    printf("\nDownloading %s...\n", incomingPacket.fileName);
+                    download(sockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                    printf("\n%s Downloaded.\n", incomingPacket.fileName);
+                    break;
+                case TYPE_MIRROR_UPLOAD:
+                    strcpy(lastFileServer,incomingPacket.fileName);
+                    downloadCommand(sockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                    read(sockfd, response, PACKET_SIZE);
+                    deserializePacket(&incomingPacket,response);
+                    if(incomingPacket.type == TYPE_UPLOAD_READY){
+                        printf("\nDownloading %s...\n", incomingPacket.fileName);
+                        download(sockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                        printf("\n%s Downloaded.\n", incomingPacket.fileName);
+                    }
+                    break;
+                case TYPE_INOTIFY_DELETE:
+                    strcpy(lastFileServer,incomingPacket.fileName);
+                    printf("\nDeleting %s...\n", incomingPacket.fileName);
+                    delete(sockfd,incomingPacket.fileName, incomingPacket.clientName);   
+                    break;
+                case TYPE_DOWNLOAD_READY:
+                    printf("\nUploading %s...\n", incomingPacket.fileName);
+                    upload(sockfd,clientPath,incomingPacket.clientName,FALSE);
+                    printf("\n%s Uploaded.\n", incomingPacket.fileName);
+                    break;
+                case TYPE_UPLOAD_READY:
+                    printf("\nDownloading %s...\n", incomingPacket.fileName);
+                    download(sockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                    printf("\n%s Downloaded.\n", incomingPacket.fileName);
+                    break;
+                default:
+                    break;
+        }
+        //pthread_mutex_unlock(&clientMutex);
+        //pthread_mutex_unlock(&writeListenMutex);
+        //pthread_cond_signal(&noInotify);
+        //checkAndPost(&writerSemaphore);
+        //pthread_mutex_unlock(&listenerInotifyMut);
+    }
+}

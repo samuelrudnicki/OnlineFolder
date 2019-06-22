@@ -16,6 +16,7 @@
 
 pthread_mutex_t clientInitMutex = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t propagationMutex = PTHREAD_MUTEX_INITIALIZER;
 int socketServerRM[MAX_BACKUPSERVERS] = {-1};
 
 void *handleConnection(void *socketDescriptor) {
@@ -51,7 +52,7 @@ void *handleConnection(void *socketDescriptor) {
     strcat(pathServerUsers,buffer);
     //propagating client name and port to all connected backup servers
     int i;
-    for(i=0;i<MAX_BACKUPSERVERS;i++){
+    for(i=0;i<MAX_BACKUPSERVERS;i++){)
         if(socketServerRM[i]!= -1){
             newClientCommand(socketServerRM[i], buffer, clientIp);
         }
@@ -135,7 +136,26 @@ void *handleConnection(void *socketDescriptor) {
                     }
                 }
                 else{
+
                     //cliente nem esta na lista
+                }
+                struct serverList *server_node = serverList;
+                struct serverList *first_node = serverList;
+                
+                do{
+                    if(server_node->isPrimary == 0){
+                        thread_mutex_lock(&propagationMutex);
+                        //escrever para secundarios 
+                    }
+                    server_node=server_node->next;
+                        thread_mutex_unlock(&propagationMutex);
+                }while(server_node!=first_node);
+
+                for(int i=0; i<MAX_BACKUPSERVERS; i++){
+                    if(socketServerRM[i]>-1){
+                        uploadCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                        upload(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                    }
                 }
                 // mandar pra todos os servers
                 // for de servers -> mirrorUploadCommand
@@ -156,6 +176,7 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
+
                 // mandar pra todos os servers
                 // for de servers -> mirrorUploadCommand
                 break;
@@ -355,7 +376,7 @@ void *createServerPrimary(){
 
 	}
     for(int j=0;j<MAX_BACKUPSERVERS;j++){
-        socketServerRM[j]=0;
+        socketServerRM[j]=-1;
     }
         
 	close(sockfd);

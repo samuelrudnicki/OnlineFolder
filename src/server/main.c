@@ -19,7 +19,7 @@
 #endif
 char ip[MAXNAME];	
 int myPORT;
-int electionOccured=0;
+int electionOccurred=0;
 /*
 PARA FAZER SETUP DO SERVIDOR MUDAR DEFINE DO WANTED_IP E PARA DEBUGAR DEBUGPORT
  */
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 		printf("Server is not primary");
 		primaryServerNode = primaryServer(&serverList);
 		secondaryServer(primaryServerNode->serverName,primaryServerNode->port);
-		electionOccured=1;
+		electionOccurred=1;
 	}
 
 		
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
 	printf("Accepting new connections...\n");
 
-	if(electionOccured){
+	if(electionOccurred){
 		int i=0;
 		//int j=0;
 		struct clientList *client_node = clientList;
