@@ -75,23 +75,22 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
         deserializePacket(&incomingPacket,buffer);
 
         switch(incomingPacket.type) {
-            /* case TYPE_MIRROR_UPLOAD:
+             case TYPE_MIRROR_UPLOAD:
                 strcpy(lastFileServer,incomingPacket.fileName);
-                downloadCommand(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
-                read(serverSockfd, buffer, PACKET_SIZE);
+                downloadCommand(primaryServerSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                read(primaryServerSockfd, buffer, PACKET_SIZE);
                 deserializePacket(&incomingPacket,buffer);
                 if(incomingPacket.type == TYPE_UPLOAD_READY){
                     printf("\nDownloading %s...\n", incomingPacket.fileName);
-                    download(serverSockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                    download(primaryServerSockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
                     printf("\n%s Downloaded.\n", incomingPacket.fileName);
                 }
                 break;
-            case TYPE_INOTIFY_DELETE:
+            /*case TYPE_INOTIFY_DELETE:
                 strcpy(lastFileServer,incomingPacket.fileName);
                 printf("\nDeleting %s...\n", incomingPacket.fileName);
                 delete(serverSockfd,incomingPacket.fileName, incomingPacket.clientName);   
-                break;
-                */
+                break;*/
             case TYPE_NEW_CLIENT:
                 printf("\nAdding new client to struct...\n");
                 struct clientList *client_node = malloc(sizeof(*client_node));//node used to find the username on the list.
@@ -308,7 +307,7 @@ void *listenerBackup(void *socketDescriptor){
 
     while(1){
         
-        listenerStatus = read(serverSockfd, response, PACKET_SIZE);
+        listenerStatus = read(sockfd, response, PACKET_SIZE);
         
         deserializePacket(&incomingPacket,response);
         

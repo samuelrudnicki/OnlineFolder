@@ -15,7 +15,7 @@
 
 #define DEBUG
 #ifdef DEBUG
-#define DEBUGPORT 4000
+#define DEBUGPORT 4002
 #endif
 char ip[MAXNAME];	
 int myPORT;
@@ -138,6 +138,7 @@ int main(int argc, char *argv[])
 
 	printf("Accepting new connections...\n");
 
+	//if new primary server elected connects to frontend
 	if(electionOccurred){
 		int i=0;
 		//int j=0;

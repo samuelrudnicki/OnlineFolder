@@ -52,7 +52,7 @@ void *handleConnection(void *socketDescriptor) {
     strcat(pathServerUsers,buffer);
     //propagating client name and port to all connected backup servers
     int i;
-    for(i=0;i<MAX_BACKUPSERVERS;i++){)
+    for(i=0;i<MAX_BACKUPSERVERS;i++){
         if(socketServerRM[i]!= -1){
             newClientCommand(socketServerRM[i], buffer, clientIp);
         }
@@ -144,17 +144,25 @@ void *handleConnection(void *socketDescriptor) {
                 
                 do{
                     if(server_node->isPrimary == 0){
-                        thread_mutex_lock(&propagationMutex);
                         //escrever para secundarios 
                     }
                     server_node=server_node->next;
-                        thread_mutex_unlock(&propagationMutex);
                 }while(server_node!=first_node);
 
                 for(int i=0; i<MAX_BACKUPSERVERS; i++){
                     if(socketServerRM[i]>-1){
-                        uploadCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName,TRUE);
-                        upload(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                        //thread_mutex_lock(&propagationMutex);
+                        mirrorUploadCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
+                        read(socketServerRM[i], buffer, PACKET_SIZE);
+                        deserializePacket(&incomingPacket,buffer);
+                        if(incomingPacket.type == TYPE_DOWNLOAD){
+                                readyToUpload(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
+                                printf("\nUploading to replica %s...\n", incomingPacket.fileName);
+                                upload(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                                printf("\n%s Uploaded to replica.\n", incomingPacket.fileName);
+                        }
+                        //thread_mutex_unlock(&propagationMutex);
+
                     }
                 }
                 // mandar pra todos os servers
