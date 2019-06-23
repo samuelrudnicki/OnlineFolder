@@ -192,7 +192,7 @@ void *handleConnection(void *socketDescriptor) {
                         deserializePacket(&incomingPacket,buffer);
                         if(incomingPacket.type == TYPE_DOWNLOAD){
                                 readyToUpload(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
-                                printf("\nUploading to replica %s...\n", incomingPacket.fileName);
+                                printf("\nUploading %s to replica...\n", incomingPacket.fileName);
                                 upload(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName,TRUE);
                                 printf("\n%s Uploaded to replica.\n", incomingPacket.fileName);
                         }

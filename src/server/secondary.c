@@ -78,6 +78,9 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
              case TYPE_MIRROR_UPLOAD:
                 strcpy(lastFileServer,incomingPacket.fileName);
                 downloadCommand(primaryServerSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
+                //sync
+                read(primaryServerSockfd, buffer, PACKET_SIZE);
+                //expecting ready to upload
                 read(primaryServerSockfd, buffer, PACKET_SIZE);
                 deserializePacket(&incomingPacket,buffer);
                 if(incomingPacket.type == TYPE_UPLOAD_READY){
@@ -88,7 +91,9 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                 break;
             case TYPE_MIRROR_DELETE:
                 printf("\nDeleting %s...\n", incomingPacket.fileName);
-                delete(primaryServerSockfd,incomingPacket.fileName, incomingPacket.clientName);   
+                delete(primaryServerSockfd,incomingPacket.fileName, incomingPacket.clientName);
+                //sync   
+                read(primaryServerSockfd, buffer, PACKET_SIZE);
                 break;
             case TYPE_NEW_CLIENT:
                 printf("\nAdding new client to struct...\n");
