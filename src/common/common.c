@@ -856,6 +856,26 @@ void mirrorUploadCommand(int sockfd, char *path, char *clientName){
     if (status < 0) 
         printf("ERROR writing to socket\n");
 }
+void mirrorDeleteCommand(int sockfd, char *path, char *clientName){
+    
+    char* fileName;
+    char serialized[PACKET_SIZE];
+    packet packetToDelete;
+    int status;
+    //char response[PAYLOAD_SIZE];
+
+    fileName = getFileName(path);
+
+    setPacket(&packetToDelete,TYPE_MIRROR_DELETE,0,0,0,fileName,clientName,"");
+
+    serializePacket(&packetToDelete,serialized);
+
+    /* write in the socket */
+
+    status = write(sockfd, serialized, PACKET_SIZE);
+    if (status < 0) 
+        printf("ERROR writing to socket\n");
+}
 
 void inotifyConfirmation(int sockfd, char *path, char *clientName) {
     char* fileName;

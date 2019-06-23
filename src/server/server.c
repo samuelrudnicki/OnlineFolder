@@ -17,7 +17,7 @@
 pthread_mutex_t clientInitMutex = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_mutex_t propagationMutex = PTHREAD_MUTEX_INITIALIZER;
-int socketServerRM[MAX_BACKUPSERVERS] = {-1};
+int socketServerRM[MAX_BACKUPSERVERS] = {0};
 
 void *handleConnection(void *socketDescriptor) {
     packet incomingPacket;
@@ -53,7 +53,7 @@ void *handleConnection(void *socketDescriptor) {
     //propagating client name and port to all connected backup servers
     int i;
     for(i=0;i<MAX_BACKUPSERVERS;i++){
-        if(socketServerRM[i]!= -1){
+        if(socketServerRM[i]>0){
             newClientCommand(socketServerRM[i], buffer, clientIp);
         }
     }
@@ -139,7 +139,7 @@ void *handleConnection(void *socketDescriptor) {
 
                     //cliente nem esta na lista
                 }
-                struct serverList *server_node = serverList;
+                /* struct serverList *server_node = serverList;
                 struct serverList *first_node = serverList;
                 
                 do{
@@ -148,9 +148,9 @@ void *handleConnection(void *socketDescriptor) {
                     }
                     server_node=server_node->next;
                 }while(server_node!=first_node);
-
+*/
                 for(int i=0; i<MAX_BACKUPSERVERS; i++){
-                    if(socketServerRM[i]>-1){
+                    if(socketServerRM[i]>0){
                         //thread_mutex_lock(&propagationMutex);
                         mirrorUploadCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
                         read(socketServerRM[i], buffer, PACKET_SIZE);
@@ -184,9 +184,20 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
-
-                // mandar pra todos os servers
-                // for de servers -> mirrorUploadCommand
+                for(int i=0; i<MAX_BACKUPSERVERS; i++){
+                    if(socketServerRM[i]>0){
+                        //thread_mutex_lock(&propagationMutex);
+                        mirrorUploadCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
+                        read(socketServerRM[i], buffer, PACKET_SIZE);
+                        deserializePacket(&incomingPacket,buffer);
+                        if(incomingPacket.type == TYPE_DOWNLOAD){
+                                readyToUpload(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
+                                printf("\nUploading to replica %s...\n", incomingPacket.fileName);
+                                upload(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName,TRUE);
+                                printf("\n%s Uploaded to replica.\n", incomingPacket.fileName);
+                        }
+                    }
+                }    
                 break;
             case TYPE_DOWNLOAD:
                 readyToUpload(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
@@ -207,6 +218,12 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
+                for(int i=0; i<MAX_BACKUPSERVERS; i++){
+                    if(socketServerRM[i]>0){
+                        //thread_mutex_lock(&propagationMutex);
+                        mirrorDeleteCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
+                    }
+                }  
                 // mandar pra todos os servers
                 // for de servers -> inotifyDelCommand
                 break;
@@ -225,8 +242,12 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
-                // for de servers -> inotifyDelCommand
-                break;
+                for(int i=0; i<MAX_BACKUPSERVERS; i++){
+                    if(socketServerRM[i]>0){
+                        //thread_mutex_lock(&propagationMutex);
+                        mirrorDeleteCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
+                    }
+                }                  break;
             case TYPE_LIST_SERVER:
                 readyToListServer(newsockfd);
                 list_files(newsockfd, pathServerUsers, TRUE);
@@ -384,7 +405,7 @@ void *createServerPrimary(){
 
 	}
     for(int j=0;j<MAX_BACKUPSERVERS;j++){
-        socketServerRM[j]=-1;
+        socketServerRM[j]=0;
     }
         
 	close(sockfd);

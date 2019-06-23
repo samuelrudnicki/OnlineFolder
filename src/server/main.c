@@ -15,7 +15,7 @@
 
 #define DEBUG
 #ifdef DEBUG
-#define DEBUGPORT 4002
+#define DEBUGPORT 4001
 #endif
 char ip[MAXNAME];	
 int myPORT;

@@ -67,6 +67,10 @@
 
 #define TYPE_NEW_CLIENT 102
 
+#define TYPE_MIRROR_DELETE 103
+
+
+
 #define PACKET_SIZE (sizeof (struct packet))
 
 #define WANTED_IP "wlp8s0"
@@ -220,5 +224,9 @@ void myIp(char* wantedIP, char* ip);
   Connect to server -- retorna socket
 */
 int connectToServerTest(char* serverIp, char* serverPort);
+/*
+  Espelha um delete aos servidores de backup
+*/
+void mirrorDeleteCommand(int sockfd, char *path, char *clientName);
 
 #endif

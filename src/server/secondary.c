@@ -86,11 +86,10 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                     printf("\n%s Downloaded.\n", incomingPacket.fileName);
                 }
                 break;
-            /*case TYPE_INOTIFY_DELETE:
-                strcpy(lastFileServer,incomingPacket.fileName);
+            case TYPE_MIRROR_DELETE:
                 printf("\nDeleting %s...\n", incomingPacket.fileName);
-                delete(serverSockfd,incomingPacket.fileName, incomingPacket.clientName);   
-                break;*/
+                delete(primaryServerSockfd,incomingPacket.fileName, incomingPacket.clientName);   
+                break;
             case TYPE_NEW_CLIENT:
                 printf("\nAdding new client to struct...\n");
                 struct clientList *client_node = malloc(sizeof(*client_node));//node used to find the username on the list.
@@ -102,6 +101,8 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                 }else {
                     updateNumberOfDevicesRM(client_node, -1, INSERTDEVICE, incomingPacket.fileName);
                 }
+                    //sync
+                    read(primaryServerSockfd,buffer,PAYLOAD_SIZE);
                 break;
             /*
             case get_sync_dir_server:
