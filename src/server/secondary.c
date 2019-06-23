@@ -128,16 +128,19 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
 }
 
 void election() {
-    sem_init(&listenRingSemaphore,0,0);
-    sem_init(&writeRingSemaphore,0,1);
-    highestID = -1;
-    participant = FALSE;
-    FINISHED = FALSE;
-    hasElected = FALSE;
-    createServerRing();
-    sem_close(&listenRingSemaphore);
-    sem_close(&writeRingSemaphore);
-
+    if(serverList!=serverList->next){
+        sem_init(&listenRingSemaphore,0,0);
+        sem_init(&writeRingSemaphore,0,1);
+        highestID = -1;
+        participant = FALSE;
+        FINISHED = FALSE;
+        hasElected = FALSE;
+        createServerRing();
+        sem_close(&listenRingSemaphore);
+        sem_close(&writeRingSemaphore);
+    }else{
+        highestID=serverList->id;
+    }
 }
 
 void createServerRing(){

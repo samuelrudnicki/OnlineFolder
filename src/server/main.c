@@ -97,21 +97,18 @@ int main(int argc, char *argv[])
 	}while(pointer!= anotherPointer);
  	*/
 	//abre conexão replica
-	
+	//TODO: garatir que a criacao do primary server aconteca antes do connect dos secundarios
 	while(!isPrimary(ip,myPORT,&serverList)){
 		printf("Server is not primary");
 		primaryServerNode = primaryServer(&serverList);
 		secondaryServer(primaryServerNode->serverName,primaryServerNode->port);
 		electionOccurred=1;
 	}
-
-		
-
-
 	if(pthread_create(&thread_replica, NULL, createServerPrimary, NULL) < 0){
 		fprintf(stderr,"ERROR, could not create thread.\n");
 		exit(-1);
 	}
+
 
 	printf("Opening Socket...\n");
 	//socket para conexão de clientes
@@ -139,7 +136,7 @@ int main(int argc, char *argv[])
 	printf("Accepting new connections...\n");
 
 	//if new primary server elected connects to frontend
-	if(electionOccurred){
+	if(electionOccurred && clientList != NULL){
 		int i=0;
 		//int j=0;
 		struct clientList *client_node = clientList;
