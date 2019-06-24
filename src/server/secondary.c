@@ -24,10 +24,7 @@ int hasElected = FALSE;
 int primaryServerSockfd;
 
 void secondaryServer(char *primaryServerIp,int primaryServerPort){
-//TODO: CONECTAR AO SERVIDOR E REPLICAR TUDO O QUE HÁ NELE - PASTAS/ARQUIVOS
-   // int initialization = 1;
-    //pthread_t thread_inotify, thread_listener, thread_writer, thread_reconnection;
-    //struct inotyClient *inotyClient = malloc(sizeof(*inotyClient));
+
     int primaryServerSockfd;
     struct hostent *server;
     struct sockaddr_in serv_addr;
