@@ -137,14 +137,16 @@ int main(int argc, char *argv[])
 	printf("Accepting new connections...\n");
 
 	//if new primary server elected connects to frontend
+	struct clientList *client_node = clientList;
+	while(client_node!=NULL){
 	if(electionOccurred && clientList != NULL){
 		int i=0;
-		//int j=0;
-		struct clientList *client_node = clientList;
 		while(client_node->client.ip[i][0]!=0 && i<2){
 			connectToFrontEnd(client_node->client.ip[i],ip);
 			i++;
 		}
+	}
+	client_node=client_node->next;
 	}
 	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
 		printf("Connection Accepted\n");
