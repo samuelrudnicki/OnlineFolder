@@ -141,7 +141,9 @@ int main(int argc, char *argv[])
 		int i=0;
 		//int j=0;
 		struct clientList *client_node = clientList;
-		while(client_node->client.ip[i][0]!=0 && i<2){
+		printf("clientNode struct\n IP1: %s\nIP2: %s\n", client_node->client.ip[0], client_node->client.ip[1]);
+		while(client_node->client.ip[i][0]!='\0' && i<2){
+			printf("\nconnecting to IP: %s\n",client_node->client.ip[i]);
 			connectToFrontEnd(client_node->client.ip[i],ip);
 			i++;
 		}

@@ -54,7 +54,9 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
 	bzero(&(serv_addr.sin_zero), 8);
 
     
-	if (connect(primaryServerSockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+
+    
+    while(connect(primaryServerSockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
         printf("ERROR connecting\n");
         exit(-1);
     }

@@ -296,13 +296,13 @@ void upload(int sockfd, char* path, char* clientName, int server) {
 void download(int sockfd, char* fileName, char* clientName, int server) {
     int status;
     int errorFlag;
-    char *path;
+    char path[FILENAME_SIZE]={0};
     char serialized[PACKET_SIZE];
     FILE *fp;
     packet packetToDownload;
 
     if(server) {
-        path = malloc(strlen(fileName) + strlen(clientName) + 11); // 11 para por _sync_dir ao final do nome
+        //path = malloc(strlen(fileName) + strlen(clientName) + 11); // 11 para por _sync_dir ao final do nome
         strcpy(path,"");
         strcat(path,clientName);
         strcat(path,"/");
@@ -343,9 +343,9 @@ void download(int sockfd, char* fileName, char* clientName, int server) {
 
     } while(packetToDownload.seqn < packetToDownload.total_size || errorFlag);
 
-    if(server) {
-        free(path);
-    }
+   // if(server) {
+  //     free(path);
+  //  }
 
     fclose(fp);
 

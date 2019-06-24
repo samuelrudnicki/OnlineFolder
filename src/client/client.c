@@ -538,7 +538,7 @@ void *serverReconnection() {
     int semStatus;
     int status;
     char buffer[PACKET_SIZE] = {0};
-    int sockfd;
+    int sockfd, newsockfd;
 	printf("Opening Server Reconnection Socket...\n");
     socklen_t clilen;
 	struct sockaddr_in serv_addr, cli_addr;
@@ -566,10 +566,10 @@ void *serverReconnection() {
 
 	printf("Listening for new Servers.\n");
 
-	while ((sockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -1) {
+	while ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) != -2) {
 		printf("New Potential Server Connection Accepted\n");
 
-        status = read(sockfd, buffer, PACKET_SIZE);
+        status = read(newsockfd, buffer, PACKET_SIZE);
 
         if (status < 0) {
             printf("ERROR reading from socket\n");
@@ -580,7 +580,7 @@ void *serverReconnection() {
         bzero(buffer,PACKET_SIZE);
         strcpy(buffer,"OK");
 
-        status = write(sockfd,buffer,PACKET_SIZE);
+        status = write(newsockfd,buffer,PACKET_SIZE);
 
         if (status < 0) {
             printf("ERROR writing to socket\n");
@@ -588,7 +588,7 @@ void *serverReconnection() {
         }
 
         bzero(buffer,PACKET_SIZE);
-        status = read(sockfd, buffer, PACKET_SIZE);
+        status = read(newsockfd, buffer, PACKET_SIZE);
 
         if (status < 0) {
             printf("ERROR reading from socket\n");
@@ -600,7 +600,7 @@ void *serverReconnection() {
         strcpy(buffer,"OK");
 
 
-        status = write(sockfd,buffer,PACKET_SIZE);
+        status = write(newsockfd,buffer,PACKET_SIZE);
 
         if (status < 0) {
             printf("ERROR writing to socket\n");
