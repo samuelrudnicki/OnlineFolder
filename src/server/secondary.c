@@ -28,7 +28,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
     int primaryServerSockfd;
     struct hostent *server;
     struct sockaddr_in serv_addr;
-    char buffer[PAYLOAD_SIZE];
+    char buffer[PACKET_SIZE];
     packet incomingPacket;
     int status;
     struct serverList* myServerNode;
@@ -61,7 +61,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
 
     while(1){
         printf("\nWaiting to read from master\n");
-        status = read(primaryServerSockfd,buffer,PAYLOAD_SIZE);
+        status = read(primaryServerSockfd,buffer,PACKET_SIZE);
         if(status == 0){
             if(myServerNode->next != myServerNode)
                 removeFromServerList(&serverList,primaryServerIp,primaryServerPort);
@@ -84,7 +84,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                 strcpy(lastFileServer,incomingPacket.fileName);
                 downloadCommand(primaryServerSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
                 //sync
-                read(primaryServerSockfd, buffer, PACKET_SIZE);
+                //read(primaryServerSockfd, buffer, PACKET_SIZE);
                 //expecting ready to upload
                 read(primaryServerSockfd, buffer, PACKET_SIZE);
                 deserializePacket(&incomingPacket,buffer);
@@ -98,7 +98,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                 printf("\nDeleting %s...\n", incomingPacket.fileName);
                 delete(primaryServerSockfd,incomingPacket.fileName, incomingPacket.clientName);
                 //sync   
-                read(primaryServerSockfd, buffer, PACKET_SIZE);
+                //read(primaryServerSockfd, buffer, PACKET_SIZE);
                 break;
             case TYPE_NEW_CLIENT:
                 printf("\nAdding new client to struct...\n");
@@ -112,7 +112,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                     updateNumberOfDevicesRM(client_node, -1, INSERTDEVICE, incomingPacket.fileName);
                 }
                     //sync
-                    read(primaryServerSockfd,buffer,PAYLOAD_SIZE);
+                    //read(primaryServerSockfd,buffer,PACKET_SIZE);
                 break;
             /*
             case get_sync_dir_server:
