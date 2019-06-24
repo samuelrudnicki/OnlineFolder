@@ -15,7 +15,7 @@
 
 #define DEBUG
 #ifdef DEBUG
-#define DEBUGPORT 4001
+#define DEBUGPORT 4002
 #endif
 char ip[MAXNAME];	
 int myPORT;
@@ -104,11 +104,12 @@ int main(int argc, char *argv[])
 		secondaryServer(primaryServerNode->serverName,primaryServerNode->port);
 		electionOccurred=1;
 	}
-	if(pthread_create(&thread_replica, NULL, createServerPrimary, NULL) < 0){
-		fprintf(stderr,"ERROR, could not create thread.\n");
-		exit(-1);
+	if(!electionOccurred){
+		if(pthread_create(&thread_replica, NULL, createServerPrimary, NULL) < 0){
+			fprintf(stderr,"ERROR, could not create thread.\n");
+			exit(-1);
+		}	
 	}
-
 
 	printf("Opening Socket...\n");
 	//socket para conexão de clientes

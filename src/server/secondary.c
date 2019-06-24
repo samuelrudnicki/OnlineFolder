@@ -36,6 +36,8 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
     int status;
     struct serverList* myServerNode;
     myServerNode = findServer(ip,myPORT,&serverList);
+    pthread_t thread_replica;
+
     
     server = gethostbyname(primaryServerIp);
 
@@ -69,6 +71,12 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
             close(primaryServerSockfd);
             election();
             setPrimary(highestID, &serverList);
+            if(myServerNode->isPrimary){
+                if(pthread_create(&thread_replica, NULL, createServerPrimary, NULL) < 0){
+    		    	fprintf(stderr,"ERROR, could not create thread.\n");
+	        		exit(-1);
+		        }
+            }
             return;
         }
 
