@@ -35,6 +35,8 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
     myServerNode = findServer(ip,myPORT,&serverList);
     pthread_t thread_replica;
 
+    pthread_mutex_t reconnectionMutex = PTHREAD_MUTEX_INITIALIZER;
+
     
     server = gethostbyname(primaryServerIp);
 
@@ -62,6 +64,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
     }
 
     while(1){
+        pthread_mutex_lock(&reconnectionMutex);
         printf("\nWaiting to read from master\n");
         status = read(primaryServerSockfd,buffer,PACKET_SIZE);
         if(status == 0){
@@ -85,9 +88,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
              case TYPE_MIRROR_UPLOAD:
                 strcpy(lastFileServer,incomingPacket.fileName);
                 downloadCommand(primaryServerSockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
-                //sync
-                //read(primaryServerSockfd, buffer, PACKET_SIZE);
-                //expecting ready to upload
+
                 read(primaryServerSockfd, buffer, PACKET_SIZE);
                 deserializePacket(&incomingPacket,buffer);
                 if(incomingPacket.type == TYPE_UPLOAD_READY){
@@ -99,8 +100,7 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
             case TYPE_MIRROR_DELETE:
                 printf("\nDeleting %s...\n", incomingPacket.fileName);
                 delete(primaryServerSockfd,incomingPacket.fileName, incomingPacket.clientName);
-                //sync   
-                //read(primaryServerSockfd, buffer, PACKET_SIZE);
+
                 break;
             case TYPE_NEW_CLIENT:
                 printf("\nAdding new client to struct...\n");
@@ -108,26 +108,17 @@ void secondaryServer(char *primaryServerIp,int primaryServerPort){
                 if (!findNode(incomingPacket.clientName, clientList, &client_node)){
                     appendNewClient(-1, incomingPacket.clientName, incomingPacket.fileName);
                     checkAndCreateDir(incomingPacket.clientName);
-                   // sprintf(auth,"%s","authorized");
-                   // write(newsockfd, auth, PACKET_SIZE);    
+   
                 }else {
                     updateNumberOfDevicesRM(client_node, -1, INSERTDEVICE, incomingPacket.fileName);
                 }
-                    //sync
-                    //read(primaryServerSockfd,buffer,PACKET_SIZE);
-                break;
-            /*
-            case get_sync_dir_server:
-                write pro server pedindo os arquivos
-                // entra numa função que fica mandando download request: olhar clientSyncServer no client.c
-             */
-            /*
 
-                // coloca na lista de clientes
-             */
+                break;
             default:
                 break;
-        }
+        }        
+        pthread_mutex_unlock(&reconnectionMutex);
+
                 
     }
 
@@ -313,71 +304,4 @@ void *writeToRing() {
     }
 
     return NULL;
-}
-void *listenerBackup(void *socketDescriptor){
-    char response[PACKET_SIZE];
-    int sockfd = *(int*)socketDescriptor;
-    packet incomingPacket;
-    bzero(response, PACKET_SIZE);
-    int listenerStatus;
-
-    while(1){
-        
-        listenerStatus = read(sockfd, response, PACKET_SIZE);
-        
-        deserializePacket(&incomingPacket,response);
-        
-
-        if(listenerStatus == 0) {
-            return NULL;
-        }
-        
-        //pthread_mutex_lock(&listenerInotifyMut);
-        //printf("PACKET: %u %u %u %u %s %s %s\n", incomingPacket.type,incomingPacket.seqn,incomingPacket.length,incomingPacket.total_size,incomingPacket.clientName,incomingPacket.fileName,incomingPacket._payload);
-        //while(inotifyLength) {
-         //   pthread_cond_wait(&noListen, &listenerInotifyMut);
-        //}
-        listenerStatus = 0;
-        //pthread_mutex_lock(&clientMutex);
-        switch(incomingPacket.type) {
-                case TYPE_UPLOAD:
-                    printf("\nDownloading %s...\n", incomingPacket.fileName);
-                    download(sockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
-                    printf("\n%s Downloaded.\n", incomingPacket.fileName);
-                    break;
-                case TYPE_MIRROR_UPLOAD:
-                    strcpy(lastFileServer,incomingPacket.fileName);
-                    downloadCommand(sockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
-                    read(sockfd, response, PACKET_SIZE);
-                    deserializePacket(&incomingPacket,response);
-                    if(incomingPacket.type == TYPE_UPLOAD_READY){
-                        printf("\nDownloading %s...\n", incomingPacket.fileName);
-                        download(sockfd,incomingPacket.fileName,incomingPacket.clientName,TRUE);
-                        printf("\n%s Downloaded.\n", incomingPacket.fileName);
-                    }
-                    break;
-                case TYPE_INOTIFY_DELETE:
-                    strcpy(lastFileServer,incomingPacket.fileName);
-                    printf("\nDeleting %s...\n", incomingPacket.fileName);
-                    delete(sockfd,incomingPacket.fileName, incomingPacket.clientName);   
-                    break;
-                case TYPE_DOWNLOAD_READY:
-                    printf("\nUploading %s...\n", incomingPacket.fileName);
-                    upload(sockfd,clientPath,incomingPacket.clientName,FALSE);
-                    printf("\n%s Uploaded.\n", incomingPacket.fileName);
-                    break;
-                case TYPE_UPLOAD_READY:
-                    printf("\nDownloading %s...\n", incomingPacket.fileName);
-                    download(sockfd,incomingPacket.fileName,incomingPacket.clientName,FALSE);
-                    printf("\n%s Downloaded.\n", incomingPacket.fileName);
-                    break;
-                default:
-                    break;
-        }
-        //pthread_mutex_unlock(&clientMutex);
-        //pthread_mutex_unlock(&writeListenMutex);
-        //pthread_cond_signal(&noInotify);
-        //checkAndPost(&writerSemaphore);
-        //pthread_mutex_unlock(&listenerInotifyMut);
-    }
 }

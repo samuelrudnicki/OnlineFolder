@@ -139,16 +139,7 @@ void *handleConnection(void *socketDescriptor) {
 
                     //cliente nem esta na lista
                 }
-                /* struct serverList *server_node = serverList;
-                struct serverList *first_node = serverList;
-                
-                do{
-                    if(server_node->isPrimary == 0){
-                        //escrever para secundarios 
-                    }
-                    server_node=server_node->next;
-                }while(server_node!=first_node);
-*/
+                //propaga para servidores de backup
                 for(int i=0; i<MAX_BACKUPSERVERS; i++){
                     if(socketServerRM[i]>0){
                         //thread_mutex_lock(&propagationMutex);
@@ -165,8 +156,6 @@ void *handleConnection(void *socketDescriptor) {
 
                     }
                 }
-                // mandar pra todos os servers
-                // for de servers -> mirrorUploadCommand
                 break;
             case TYPE_INOTIFY:
                 readyToDownload(newsockfd,incomingPacket.fileName,incomingPacket.clientName);
@@ -224,8 +213,7 @@ void *handleConnection(void *socketDescriptor) {
                         mirrorDeleteCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
                     }
                 }  
-                // mandar pra todos os servers
-                // for de servers -> inotifyDelCommand
+
                 break;
             case TYPE_DELETE:
                 delete(newsockfd,incomingPacket.fileName, pathServerUsers);
@@ -396,11 +384,7 @@ void *createServerPrimary(){
         //adiciona sockets a lista de sockets conectados
         socketServerRM[i]=newsockfd;
         i++;
-        //get_sync_dir versao server
-        // read do request do cliente
-        // dai começa o get sync dir server
-
-
+  
 		printf("Handler Assigned -- PRIMARY SERVER\n");
 
 	}
