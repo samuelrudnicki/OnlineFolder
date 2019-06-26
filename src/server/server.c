@@ -32,6 +32,7 @@ void *handleConnection(void *socketDescriptor) {
     char pathServerUsers[CLIENT_NAME_SIZE] = "";
     char auth[PACKET_SIZE] = {0};
     int otherSocket;
+    int i;
 
 
 
@@ -49,9 +50,9 @@ void *handleConnection(void *socketDescriptor) {
         printf("ERROR reading IP from socket");
 
     strcpy(userName , buffer);
+    //breakpoint aqui
     strcat(pathServerUsers,buffer);
     //propagating client name and port to all connected backup servers
-    int i;
     for(i=0;i<MAX_BACKUPSERVERS;i++){
         if(socketServerRM[i]>0){
             newClientCommand(socketServerRM[i], buffer, clientIp);
@@ -140,7 +141,7 @@ void *handleConnection(void *socketDescriptor) {
                     //cliente nem esta na lista
                 }
                 //propaga para servidores de backup
-                for(int i=0; i<MAX_BACKUPSERVERS; i++){
+                for(i=0; i<MAX_BACKUPSERVERS; i++){
                     if(socketServerRM[i]>0){
                         //thread_mutex_lock(&propagationMutex);
                         mirrorUploadCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
@@ -173,7 +174,7 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
-                for(int i=0; i<MAX_BACKUPSERVERS; i++){
+                for(i=0; i<MAX_BACKUPSERVERS; i++){
                     if(socketServerRM[i]>0){
                         //thread_mutex_lock(&propagationMutex);
                         mirrorUploadCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
@@ -207,7 +208,7 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
-                for(int i=0; i<MAX_BACKUPSERVERS; i++){
+                for(i=0; i<MAX_BACKUPSERVERS; i++){
                     if(socketServerRM[i]>0){
                         //thread_mutex_lock(&propagationMutex);
                         mirrorDeleteCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
@@ -230,7 +231,7 @@ void *handleConnection(void *socketDescriptor) {
                 else{
                     //cliente nem esta na lista
                 }
-                for(int i=0; i<MAX_BACKUPSERVERS; i++){
+                for(i=0; i<MAX_BACKUPSERVERS; i++){
                     if(socketServerRM[i]>0){
                         //thread_mutex_lock(&propagationMutex);
                         mirrorDeleteCommand(socketServerRM[i],incomingPacket.fileName,incomingPacket.clientName);
